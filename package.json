@@ -1,0 +1,17 @@
+{
+  "name": "native-webview",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npm run build && node index.js",
+    "build": "cargo build --release"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "ffi-napi": "^4.0.3"
+  }
+}
