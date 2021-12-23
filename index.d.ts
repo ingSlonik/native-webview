@@ -12,8 +12,9 @@ export type Configuration<M extends {}> = {
     invokeHandler: (message: M) => void,
 };
 
-type WebView = number; // pointer
-type Handle = number; // pointer
+type Pointer = Buffer;
+type WebView = Pointer;
+type Handle = Pointer;
 
 export function create(conf: Partial<Configuration>): WebView;
 export function getHandle(webview: WebView): Handle;
