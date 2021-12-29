@@ -1,4 +1,9 @@
-var { join } = require("path");
+var { join, resolve } = require("path");
+const {
+    Worker, isMainThread, parentPort, workerData
+  } = require('worker_threads');
+
+
 var ffi = require('ffi-napi');
 
 var lib = ffi.Library(join(__dirname, './target/release/libnative_webview'), {
@@ -24,7 +29,7 @@ const html = `<html>
     </body>
 </html>`;
 
-var webview = lib.create(
+let nwv = lib.create(
     "Title of window",
     html,
     800,
@@ -37,12 +42,36 @@ var webview = lib.create(
     300,
     callback,
 );
-console.log({webview});
+console.log({nwv});
+
 
 // const handle = lib.get_handle(webview);
 // console.log({handle, webview});
 // 
-// setTimeout(() => lib.exit(handle), 1000);
+// setTimeout(() => {
+//     console.log("New title JS")
+//     lib.set_title(nwv, "Nový...");
+// }, 2000);
+// setTimeout(() => lib.exit(nwv), 5000);
 
-lib.run(webview);
-console.log("RUN");
+// (async () => {
+//     console.log("RUN");
+//     const result = await run(nwv);
+//     console.log("STOP", {result});
+// })();
+
+function run(nwv) {
+    return new Promise((resolve, reject) => {
+        lib.run(nwv);
+        /*
+        const worker = new Worker("./worker.js", { /*workerData: "ahoj" nwv });
+      //  worker.on('message', resolve);
+        worker.on('message', message => console.log(message));
+      worker.on('error', reject);
+      worker.on('exit', (code) => {
+        if (code !== 0)
+          reject(new Error(`Worker stopped with exit code ${code}`));
+      });
+      */
+    });
+}

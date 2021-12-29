@@ -6,7 +6,12 @@ edition = "2021"
 [lib]
 crate-type = ["dylib"]
 
+[[bin]]
+name = "native-webview"
+path = "src/bin.rs"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-web-view = { version = "0.7", features = ["edge"] }
+web-view = { version = "0.7" }
+# web-view = { version = "0.7", features = ["edge"] }
