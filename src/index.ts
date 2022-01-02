@@ -151,6 +151,9 @@ export default class NativeWebView {
                     }
                 });
             });
+
+            // TODO: update setting with first run
+            this.setTitle(this.settings.title);
         });
     }
 

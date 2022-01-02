@@ -85,7 +85,7 @@ fn main() -> wry::Result<()> {
 
     let event_loop = EventLoop::with_user_event();
     let window = WindowBuilder::new()
-        .with_title("Native WebView")
+        // .with_title("Native WebView")
         .build(&event_loop)?;
     let webview = WebViewBuilder::new(window)?
         .with_initialization_script(INIT_SCRIPT)
