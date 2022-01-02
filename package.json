@@ -6,10 +6,10 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "example": "cargo build && ts-node",
+    "example": "ts-node",
     "build": "tsc",
-    "build:linux": "cargo build --release --target=x86_64-unknown-linux-gnu",
-    "build:windows": "cargo build --release --target=x86_64-pc-windows-gnu",
+    "build:linux": "cargo build --release --target=x86_64-unknown-linux-gnu && mv ./target/x86_64-unknown-linux-gnu/release/native-webview ./dist/linux_x86_64",
+    "build:windows": "cargo build --release --target=x86_64-pc-windows-gnu && mv ./target/x86_64-pc-windows-gnu/release/native-webview.exe ./dist/windows_x86_64",
     "build:mac": "cargo build --release --target=x86_64-apple-darwin && mv ./target/x86_64-apple-darwin/release/native-webview ./dist/darwin_x86_64"
   },
   "author": "",
