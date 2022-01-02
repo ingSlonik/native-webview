@@ -24,6 +24,9 @@ type ChannelOut = {
 } | {
     type: "setTitle",
     title: string,
+} | {
+    type: "setWindowIcon",
+    path: string,
 }
 
 type ChannelIn = {
@@ -44,6 +47,7 @@ type ChannelIn = {
 
 export type NativeWebViewSettings = {
     title: string,
+    windowIcon: null | string,
     getPath: (nwv: string) => string,
     onMessage: (message: any) => void,
 };
@@ -109,7 +113,6 @@ export default class NativeWebView {
         if (this.childProcess !== null) throw Error("WebView is already running.");
 
         return new Promise((resolve, reject) => {
-
             this.childProcess = spawn(PROGRAM_PATH, [], {});
             this.childProcess.stdin.setDefaultEncoding("utf-8");
 
@@ -151,6 +154,10 @@ export default class NativeWebView {
                     }
                 });
             });
+
+            // TODO: upload setting with first run
+            this.setTitle(this.settings.title);
+            if (this.settings.windowIcon) this.setWindowIcon(this.settings.windowIcon);
         });
     }
 
@@ -163,6 +170,14 @@ export default class NativeWebView {
 
         if (this.childProcess !== null)
             this.sendChannel({ type: "setTitle", title });
+    }
+
+    /** Only for Windows and Linux. */
+    setWindowIcon(path: string) {
+        this.settings.windowIcon = path;
+
+        if (this.childProcess !== null)
+            this.sendChannel({ type: "setWindowIcon", path });
     }
 
     close() {

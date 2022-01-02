@@ -6,11 +6,13 @@ use crossbeam_channel::{bounded, Receiver};
 use serde::Serialize;
 use serde_json::Value;
 
+use image;
+
 use wry::{
     application::{
         event::{Event, StartCause, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
-        window::WindowBuilder,
+        window::{Icon, WindowBuilder},
     },
     http::ResponseBuilder,
     webview::{RpcResponse, WebViewBuilder},
@@ -85,7 +87,8 @@ fn main() -> wry::Result<()> {
 
     let event_loop = EventLoop::with_user_event();
     let window = WindowBuilder::new()
-        .with_title("Native WebView")
+        // TODO: open windows with default settings
+        // .with_title("Native WebView")
         .build(&event_loop)?;
     let webview = WebViewBuilder::new(window)?
         .with_initialization_script(INIT_SCRIPT)
@@ -157,6 +160,9 @@ fn main() -> wry::Result<()> {
                     "setTitle" => webview
                         .window()
                         .set_title(&message["title"].as_str().unwrap()),
+                    "setWindowIcon" => webview
+                        .window()
+                        .set_window_icon(Some(load_icon(&message["path"].as_str().unwrap()))),
                     "close" => *control_flow = ControlFlow::Exit,
                     "eval" => webview
                         .evaluate_script(&message["js"].as_str().unwrap())
@@ -172,4 +178,16 @@ fn main() -> wry::Result<()> {
             _ => (),
         }
     });
+}
+
+fn load_icon(path: &str) -> Icon {
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image::open(path)
+            .expect("Failed to open icon path")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }

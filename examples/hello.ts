@@ -3,6 +3,7 @@ import NativeWebView from "../src/index";
 
 const nwv = new NativeWebView({
     title: "Hello title",
+    windowIcon: resolve(__dirname, "icon.png"),
     getPath: (nmv) => resolve(__dirname, nmv.replace("nwv://", "")),
     onMessage: (message: string) => {
         console.log("Message from WebView:", message);
