@@ -3,7 +3,7 @@ import NativeWebView from "../src/index";
 
 const nwv = new NativeWebView({
     title: "Hello title",
-    size: { width: 320, height: 240 },
+    size: { width: 420, height: 240 },
     windowIcon: resolve(__dirname, "icon.png"),
     getPath: (nmv) => resolve(__dirname, nmv.replace("nwv://", "")),
     onMessage: (message: string) => {
