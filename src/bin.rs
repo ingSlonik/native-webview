@@ -8,6 +8,7 @@ use serde_json::Value;
 
 use wry::{
     application::{
+        dpi::LogicalSize,
         event::{Event, StartCause, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
         window::WindowBuilder,
@@ -152,11 +153,17 @@ fn main() -> wry::Result<()> {
         match event {
             Event::UserEvent(message) => {
                 let message_type = message["type"].as_str().unwrap();
+                let window = webview.window();
 
                 match message_type {
-                    "setTitle" => webview
-                        .window()
-                        .set_title(&message["title"].as_str().unwrap()),
+                    "setTitle" => window.set_title(&message["title"].as_str().unwrap()),
+                    "setSize" => {
+                        let size = LogicalSize::new(
+                            message["width"].as_f64().unwrap(),
+                            message["height"].as_f64().unwrap(),
+                        );
+                        window.set_inner_size(size);
+                    }
                     "close" => *control_flow = ControlFlow::Exit,
                     "eval" => webview
                         .evaluate_script(&message["js"].as_str().unwrap())

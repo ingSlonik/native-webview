@@ -24,7 +24,11 @@ type ChannelOut = {
 } | {
     type: "setTitle",
     title: string,
-}
+} | {
+    type: "setSize",
+    width: number,
+    height: number,
+};
 
 type ChannelIn = {
     type: "message",
@@ -44,16 +48,24 @@ type ChannelIn = {
 
 export type NativeWebViewSettings = {
     title: string,
+    size: { width: number, height: number },
     getPath: (nwv: string) => string,
     onMessage: (message: any) => void,
+};
+
+const defaultNativeWebViewSettings: NativeWebViewSettings = {
+    title: "Native WebView",
+    size: { width: 680, height: 420 },
+    getPath: (nwv) => resolve(__dirname, "..", "dist", nwv.replace("nwv://", "")),
+    onMessage: (message) => console.log("Message:", message),
 };
 
 export default class NativeWebView {
     private settings: NativeWebViewSettings;
     private childProcess: null | ChildProcessWithoutNullStreams = null;
 
-    constructor(settings: NativeWebViewSettings) {
-        this.settings = settings;
+    constructor(settings: Partial<NativeWebViewSettings>) {
+        this.settings = { ...defaultNativeWebViewSettings, ...settings };
     }
 
     // web Common MIME types
@@ -154,6 +166,7 @@ export default class NativeWebView {
 
             // TODO: update setting with first run
             this.setTitle(this.settings.title);
+            this.setSize(this.settings.size.width, this.settings.size.height);
         });
     }
 
@@ -166,6 +179,13 @@ export default class NativeWebView {
 
         if (this.childProcess !== null)
             this.sendChannel({ type: "setTitle", title });
+    }
+
+    setSize(width: number, height: number) {
+        this.settings.size = { width, height };
+
+        if (this.childProcess !== null)
+            this.sendChannel({ type: "setSize", width, height });
     }
 
     close() {
