@@ -28,6 +28,9 @@ type ChannelOut = {
     type: "setSize",
     width: number,
     height: number,
+} | {
+    type: "setWindowIcon",
+    path: string,
 };
 
 type ChannelIn = {
@@ -49,6 +52,17 @@ type ChannelIn = {
 export type NativeWebViewSettings = {
     title: string,
     size: { width: number, height: number },
+    /**
+     * Sets the window icon. On Windows and Linux, this is typically the small icon in the top-left
+     * corner of the title bar.
+     *
+     * ## Platform-specific
+     * - **iOS / Android / macOS:** Unsupported.
+     *
+     * On Windows, this sets `ICON_SMALL`. The base size for a window icon is 16x16, but it's
+     * recommended to account for screen scaling and pick a multiple of that, i.e. 32x32.
+     */
+    windowIcon: null | string,
     getPath: (nwv: string) => string,
     onMessage: (message: any) => void,
 };
@@ -56,6 +70,7 @@ export type NativeWebViewSettings = {
 const defaultNativeWebViewSettings: NativeWebViewSettings = {
     title: "Native WebView",
     size: { width: 680, height: 420 },
+    windowIcon: null,
     getPath: (nwv) => resolve(__dirname, "..", "dist", nwv.replace("nwv://", "")),
     onMessage: (message) => console.log("Message:", message),
 };
@@ -121,7 +136,6 @@ export default class NativeWebView {
         if (this.childProcess !== null) throw Error("WebView is already running.");
 
         return new Promise((resolve, reject) => {
-
             this.childProcess = spawn(PROGRAM_PATH, [], {});
             this.childProcess.stdin.setDefaultEncoding("utf-8");
 
@@ -167,6 +181,7 @@ export default class NativeWebView {
             // TODO: update setting with first run
             this.setTitle(this.settings.title);
             this.setSize(this.settings.size.width, this.settings.size.height);
+            if (this.settings.windowIcon) this.setWindowIcon(this.settings.windowIcon);
         });
     }
 
@@ -186,6 +201,23 @@ export default class NativeWebView {
 
         if (this.childProcess !== null)
             this.sendChannel({ type: "setSize", width, height });
+    }
+
+    /**
+     * Sets the window icon. On Windows and Linux, this is typically the small icon in the top-left
+     * corner of the title bar.
+     *
+     * ## Platform-specific
+     * - **iOS / Android / macOS:** Unsupported.
+     *
+     * On Windows, this sets `ICON_SMALL`. The base size for a window icon is 16x16, but it's
+     * recommended to account for screen scaling and pick a multiple of that, i.e. 32x32.
+     */
+    setWindowIcon(path: string) {
+        this.settings.windowIcon = path;
+
+        if (this.childProcess !== null)
+            this.sendChannel({ type: "setWindowIcon", path });
     }
 
     close() {

@@ -17,6 +17,11 @@ use wry::{
     webview::{RpcResponse, WebViewBuilder},
 };
 
+#[cfg(not(target_os = "macos"))]
+use image;
+#[cfg(not(target_os = "macos"))]
+use wry::application::window::Icon;
+
 #[derive(Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 enum Message {
@@ -86,6 +91,7 @@ fn main() -> wry::Result<()> {
 
     let event_loop = EventLoop::with_user_event();
     let window = WindowBuilder::new()
+        // TODO: open windows with default settings
         // .with_title("Native WebView")
         .build(&event_loop)?;
     let webview = WebViewBuilder::new(window)?
@@ -164,6 +170,11 @@ fn main() -> wry::Result<()> {
                         );
                         window.set_inner_size(size);
                     }
+                    "setWindowIcon" =>
+                    {
+                        #[cfg(not(target_os = "macos"))]
+                        window.set_window_icon(Some(load_icon(&message["path"].as_str().unwrap())))
+                    }
                     "close" => *control_flow = ControlFlow::Exit,
                     "eval" => webview
                         .evaluate_script(&message["js"].as_str().unwrap())
@@ -179,4 +190,17 @@ fn main() -> wry::Result<()> {
             _ => (),
         }
     });
+}
+
+#[cfg(not(target_os = "macos"))]
+fn load_icon(path: &str) -> Icon {
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image::open(path)
+            .expect("Failed to open icon path")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }
