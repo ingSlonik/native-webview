@@ -6,17 +6,20 @@ use crossbeam_channel::{bounded, Receiver};
 use serde::Serialize;
 use serde_json::Value;
 
-use image;
-
 use wry::{
     application::{
         event::{Event, StartCause, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
-        window::{Icon, WindowBuilder},
+        window::WindowBuilder,
     },
     http::ResponseBuilder,
     webview::{RpcResponse, WebViewBuilder},
 };
+
+#[cfg(not(target_os = "macos"))]
+use image;
+#[cfg(not(target_os = "macos"))]
+use wry::application::window::Icon;
 
 #[derive(Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
@@ -160,9 +163,13 @@ fn main() -> wry::Result<()> {
                     "setTitle" => webview
                         .window()
                         .set_title(&message["title"].as_str().unwrap()),
-                    "setWindowIcon" => webview
-                        .window()
-                        .set_window_icon(Some(load_icon(&message["path"].as_str().unwrap()))),
+                    "setWindowIcon" =>
+                    {
+                        #[cfg(not(target_os = "macos"))]
+                        webview
+                            .window()
+                            .set_window_icon(Some(load_icon(&message["path"].as_str().unwrap())))
+                    }
                     "close" => *control_flow = ControlFlow::Exit,
                     "eval" => webview
                         .evaluate_script(&message["js"].as_str().unwrap())
@@ -180,6 +187,7 @@ fn main() -> wry::Result<()> {
     });
 }
 
+#[cfg(not(target_os = "macos"))]
 fn load_icon(path: &str) -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
         let image = image::open(path)
