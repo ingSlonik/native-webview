@@ -6,8 +6,9 @@ const IO_CHANNEL_PREFIX = "_ioc:";
 
 const SYSTEM = platform === "darwin" ? "darwin" :
     platform === "win32" ? "windows" :
-        "linux";
-const PROGRAM_PATH = resolve(__dirname, "..", "dist", `${SYSTEM}_x86_64`, "native-webview");
+    "linux";
+
+const PROGRAM_PATH = resolve(__dirname, "..", "dist", `${SYSTEM}_x86_64`, `native-webview${SYSTEM === "windows" ? ".exe" : ""}`);
 
 type ChannelOut = {
     type: "run"
