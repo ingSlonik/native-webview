@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "example": "ts-node",
     "build": "tsc",
-    "build:linux": "cargo build --release --target=x86_64-unknown-linux-gnu && mv ./target/x86_64-unknown-linux-gnu/release/native-webview ./dist/linux_x86_64",
+    "build:linux": "cargo build --release --target=x86_64-unknown-linux-gnu && rm -f ./dist/linux_x86_64/native-webview && mv ./target/x86_64-unknown-linux-gnu/release/native-webview ./dist/linux_x86_64",
     "build:win": "cargo build --release --target=x86_64-pc-windows-msvc && move /Y .\\target\\x86_64-pc-windows-msvc\\release\\native-webview.exe .\\dist\\windows_x86_64",
     "build:mac": "cargo build --release --target=x86_64-apple-darwin && mv ./target/x86_64-apple-darwin/release/native-webview ./dist/darwin_x86_64"
   },
