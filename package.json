@@ -1,7 +1,7 @@
 {
   "name": "native-webview",
   "version": "0.1.0",
-  "description": "",
+  "description": "Native WebView for all platforms.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -12,11 +12,25 @@
     "build:win": "cargo build --release --target=x86_64-pc-windows-msvc && move /Y .\\target\\x86_64-pc-windows-msvc\\release\\native-webview.exe .\\dist\\windows_x86_64",
     "build:mac": "cargo build --release --target=x86_64-apple-darwin && mv ./target/x86_64-apple-darwin/release/native-webview ./dist/darwin_x86_64"
   },
-  "author": "",
-  "license": "MIT",
   "devDependencies": {
     "@types/node": "^17.0.5",
     "ts-node": "^10.4.0",
     "typescript": "^4.5.4"
+  },
+  "license": "Apache2.0/MIT",
+  "keywords": [
+    "native",
+    "node",
+    "webview",
+    "fast",
+    "lightweight"
+  ],
+  "author": "Filip Paulů <ing.fenix@seznam.cz>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ingSlonik/native-webview.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ingSlonik/native-webview/issues"
   }
 }
