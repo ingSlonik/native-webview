@@ -47,6 +47,16 @@ type ChannelIn = {
 
 export type NativeWebViewSettings = {
     title: string,
+    /**
+     * Sets the window icon. On Windows and Linux, this is typically the small icon in the top-left
+     * corner of the title bar.
+     *
+     * ## Platform-specific
+     * - **iOS / Android / macOS:** Unsupported.
+     *
+     * On Windows, this sets `ICON_SMALL`. The base size for a window icon is 16x16, but it's
+     * recommended to account for screen scaling and pick a multiple of that, i.e. 32x32.
+     */
     windowIcon: null | string,
     getPath: (nwv: string) => string,
     onMessage: (message: any) => void,
@@ -172,7 +182,16 @@ export default class NativeWebView {
             this.sendChannel({ type: "setTitle", title });
     }
 
-    /** Only for Windows and Linux. */
+    /**
+     * Sets the window icon. On Windows and Linux, this is typically the small icon in the top-left
+     * corner of the title bar.
+     *
+     * ## Platform-specific
+     * - **iOS / Android / macOS:** Unsupported.
+     *
+     * On Windows, this sets `ICON_SMALL`. The base size for a window icon is 16x16, but it's
+     * recommended to account for screen scaling and pick a multiple of that, i.e. 32x32.
+     */
     setWindowIcon(path: string) {
         this.settings.windowIcon = path;
 
