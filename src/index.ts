@@ -107,10 +107,10 @@ export default class NativeWebView {
                 return;
 
             case "log":
-                console.log("FE:", ...JSON.parse(decodeURIComponent(message.log)));
+                console.log("WebView:", ...JSON.parse(decodeURIComponent(message.log)));
                 return;
             case "error":
-                console.error("FE:", message.url, message.line, decodeURIComponent(message.error));
+                console.error("WebView Error:", message.url, message.line, decodeURIComponent(message.error));
                 return;
             default:
                 console.error("Unknown message type.", message);
