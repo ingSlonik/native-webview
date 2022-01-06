@@ -10,49 +10,12 @@ const SYSTEM = platform === "darwin" ? "darwin" :
 
 const PROGRAM_PATH = resolve(__dirname, "..", "dist", `${SYSTEM}_x86_64`, `native-webview${SYSTEM === "windows" ? ".exe" : ""}`);
 
-type ChannelOut = {
-    type: "run"
-} | {
-    type: "close"
-} | {
-    type: "path",
-    url: string,
-    path: string,
-    mimetype: string,
-} | {
-    type: "eval",
-    js: string,
-} | {
-    type: "setTitle",
-    title: string,
-} | {
-    type: "setSize",
-    width: number,
-    height: number,
-} | {
-    type: "setWindowIcon",
-    path: string,
-};
-
-type ChannelIn = {
-    type: "message",
-    message: string,
-} | {
-    type: "log",
-    log: string, // stringify as array
-} | {
-    type: "error",
-    error: string,
-    url: string,
-    line: number,
-} | {
-    type: "path",
-    url: string,
-};
-
 export type NativeWebViewSettings = {
-    title: string,
-    size: { width: number, height: number },
+    focus: {},
+    close: {},
+    eval: { js: string },
+
+    title: { title: string },
     /**
      * Sets the window icon. On Windows and Linux, this is typically the small icon in the top-left
      * corner of the title bar.
@@ -63,28 +26,50 @@ export type NativeWebViewSettings = {
      * On Windows, this sets `ICON_SMALL`. The base size for a window icon is 16x16, but it's
      * recommended to account for screen scaling and pick a multiple of that, i.e. 32x32.
      */
-    windowIcon: null | string,
-    getPath: (nwv: string) => string,
-    onMessage: (message: any) => void,
+    windowIcon: { path: string },
+    resizable: { resizable: boolean },
+    innerSize: { width: number, height: number },
+    minInnerSize: { width: number, height: number },
+    maxInnerSize: { width: number, height: number },
+    outerPosition: { top: number, left: number },
+    alwaysOnTop: { always: boolean },
+    decorations: { decorations: boolean },
+    fullscreen: { fullscreen: boolean },
+    maximized: { maximized: boolean },
+    minimized: { minimized: boolean },
 };
 
-const defaultNativeWebViewSettings: NativeWebViewSettings = {
-    title: "Native WebView",
-    size: { width: 680, height: 420 },
-    windowIcon: null,
-    getPath: (nwv) => resolve(__dirname, "..", "dist", nwv.replace("nwv://", "")),
-    onMessage: (message) => console.log("Message:", message),
+type Path = {
+    url: string,
+    path: string,
+    mimetype: string
 };
+
+type ChannelIn = { type: "message", message: string }
+    | { type: "log", log: string /* stringify as array */ }
+    | { type: "error", error: string, url: string, line: number }
+    | { type: "path", url: string };
 
 export default class NativeWebView {
-    private settings: NativeWebViewSettings;
+    private settings: Partial<NativeWebViewSettings>;
     private childProcess: null | ChildProcessWithoutNullStreams = null;
 
-    constructor(settings: Partial<NativeWebViewSettings>) {
-        this.settings = { ...defaultNativeWebViewSettings, ...settings };
+    private getPath: (nwv: string) => string = (nwv) => resolve(__dirname, "..", "dist", nwv.replace("nwv://", ""));
+    private onMessage: (message: any) => void = (message) => console.log("Message:", message);
+
+    constructor(
+        settings: Partial<Omit<NativeWebViewSettings, "eval" | "close" | "focus" | "title">> & { title: string },
+        getPath?: (nwv: string) => string,
+        onMessage?: (message: any) => void,
+    ) {
+        const { title, windowIcon, ...other } = settings;
+        this.settings = { title: { title }, ...other };
+
+        if (getPath) this.getPath = getPath;
+        if (onMessage) this.onMessage = onMessage;
     }
 
-    // web Common MIME types
+    // web common MIME types
     private getMimetype(path: string): string {
         const extension = extname(path);
 
@@ -104,22 +89,29 @@ export default class NativeWebView {
         }
     }
 
-    private sendChannel(message: ChannelOut) {
+    private sendPath(path: Path) {
         if (this.childProcess === null) throw Error("WebView is not running.");
 
-        // console.log("sendChannel", message);
-        this.childProcess.stdin.write(`${IO_CHANNEL_PREFIX}${JSON.stringify(message)}\n`);
+        // console.log("sendPath", message);
+        this.childProcess.stdin.write(`${IO_CHANNEL_PREFIX}${JSON.stringify({ type: "path", ...path })}\n`);
+    }
+
+    private sendSetting<Type extends keyof NativeWebViewSettings>(type: Type, setting: NativeWebViewSettings[Type]) {
+        if (this.childProcess === null) throw Error("WebView is not running.");
+
+        // console.log("sendSetting", message);
+        this.childProcess.stdin.write(`${IO_CHANNEL_PREFIX}${JSON.stringify({ type, ...setting })}\n`);
     }
 
     private receiveChannel(message: ChannelIn) {
         // console.log("receiveChannel", message);
         switch (message.type) {
             case "message":
-                this.settings.onMessage(JSON.parse(decodeURIComponent(message.message)));
+                this.onMessage(JSON.parse(decodeURIComponent(message.message)));
                 return;
             case "path":
-                const path = this.settings.getPath(message.url);
-                this.sendChannel({ type: "path", url: message.url, path, mimetype: this.getMimetype(path) });
+                const path = this.getPath(message.url);
+                this.sendPath({ url: message.url, path, mimetype: this.getMimetype(path) });
                 return;
 
             case "log":
@@ -180,38 +172,33 @@ export default class NativeWebView {
             });
 
             // TODO: update setting with first run
-            this.setTitle(this.settings.title);
-            this.setSize(this.settings.size.width, this.settings.size.height);
-            if (this.settings.windowIcon) this.setWindowIcon(this.settings.windowIcon);
+            for (const [type, value] of Object.entries(this.settings)) {
+                if (value !== null) {
+                    this.set(type as keyof NativeWebViewSettings, value);
+                }
+            }
         });
     }
 
+    set<Type extends keyof NativeWebViewSettings>(type: Type, setting: NativeWebViewSettings[Type]) {
+        this.sendSetting(type, setting);
+    }
+
+    // ------ most used --------
+
     eval(js: string) {
-        this.sendChannel({ type: "eval", js });
+        this.set("eval", { js });
     }
 
-    setTitle(title: string) {
-        this.settings.title = title;
-
-        if (this.childProcess !== null)
-            this.sendChannel({ type: "setTitle", title });
-    }
-
-    setSize(width: number, height: number) {
-        this.settings.size = { width, height };
-
-        if (this.childProcess !== null)
-            this.sendChannel({ type: "setSize", width, height });
-    }
-
-    setWindowIcon(path: string) {
-        this.settings.windowIcon = path;
-
-        if (this.childProcess !== null)
-            this.sendChannel({ type: "setWindowIcon", path });
+    focus() {
+        this.set("focus", {});
     }
 
     close() {
-        this.sendChannel({ type: "close" });
+        this.set("close", {});
+    }
+
+    setTitle(title: string) {
+        this.set("title", { title });
     }
 }

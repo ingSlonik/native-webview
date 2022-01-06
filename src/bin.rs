@@ -5,13 +5,12 @@ use std::thread;
 use crossbeam_channel::{bounded, Receiver};
 use serde::{Deserialize, Serialize};
 
-use wry::application::window::Fullscreen;
 use wry::{
     application::{
         dpi::{LogicalPosition, LogicalSize},
         event::{Event, StartCause, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
-        window::WindowBuilder,
+        window::{Fullscreen, WindowBuilder},
     },
     http::ResponseBuilder,
     webview::{RpcResponse, WebViewBuilder},
@@ -46,19 +45,19 @@ enum Message {
 enum Settings {
     Eval { js: String },
     Close {},
-    SetTitle { title: String },
-    SetInnerSize { width: f64, height: f64 },
-    SetWindowIcon { path: String },
-    SetAlwaysOnTop { always_on_top: bool },
-    SetDecorations { decorations: bool },
-    SetOuterPosition { top: f64, left: f64 },
-    SetResizable { resizable: bool },
-    SetFocus {},
-    SetFullscreen { fullscreen: bool },
-    SetMaxInnerSize { width: f64, height: f64 },
-    SetMaximized { maximized: bool },
-    SetMinInnerSize { width: f64, height: f64 },
-    SetMinimized { minimized: bool },
+    Title { title: String },
+    WindowIcon { path: String },
+    Resizable { resizable: bool },
+    InnerSize { width: f64, height: f64 },
+    MinInnerSize { width: f64, height: f64 },
+    MaxInnerSize { width: f64, height: f64 },
+    OuterPosition { top: f64, left: f64 },
+    AlwaysOnTop { always: bool },
+    Decorations { decorations: bool },
+    Focus {},
+    Fullscreen { fullscreen: bool },
+    Maximized { maximized: bool },
+    Minimized { minimized: bool },
 }
 
 #[derive(Deserialize)]
@@ -189,45 +188,41 @@ fn main() -> wry::Result<()> {
                 match serde_json::from_str::<Settings>(&string).unwrap() {
                     Settings::Eval { js } => webview.evaluate_script(&js).unwrap(),
                     Settings::Close {} => *control_flow = ControlFlow::Exit,
-                    Settings::SetTitle { title } => window.set_title(&title),
-                    Settings::SetInnerSize { width, height } => {
-                        window.set_inner_size(LogicalSize::new(width, height))
-                    }
+                    Settings::Title { title } => window.set_title(&title),
                     #[cfg(not(target_os = "macos"))]
-                    Settings::SetWindowIcon { path } => {
-                        window.set_window_icon(Some(load_icon(&path)))
-                    }
+                    Settings::WindowIcon { path } => window.set_window_icon(Some(load_icon(&path))),
                     #[cfg(target_os = "macos")]
-                    Settings::SetWindowIcon { path: _ } => {
+                    Settings::WindowIcon { path: _ } => {
                         println!("Window icon not allowed for macos.");
                     }
-                    Settings::SetAlwaysOnTop { always_on_top } => {
-                        window.set_always_on_top(always_on_top)
+                    Settings::Resizable { resizable } => window.set_resizable(resizable),
+                    Settings::InnerSize { width, height } => {
+                        window.set_inner_size(LogicalSize::new(width, height))
                     }
-                    Settings::SetDecorations { decorations } => window.set_decorations(decorations),
-                    Settings::SetOuterPosition { top, left } => {
+                    Settings::MinInnerSize { width, height } => {
+                        window.set_min_inner_size(Some(LogicalSize::new(width, height)))
+                    }
+                    Settings::MaxInnerSize { width, height } => {
+                        window.set_max_inner_size(Some(LogicalSize::new(width, height)))
+                    }
+                    Settings::OuterPosition { top, left } => {
                         window.set_outer_position(LogicalPosition::new(left, top))
                     }
-                    Settings::SetResizable { resizable } => window.set_resizable(resizable),
-                    Settings::SetFocus {} => {
+                    Settings::AlwaysOnTop { always } => window.set_always_on_top(always),
+                    Settings::Decorations { decorations } => window.set_decorations(decorations),
+                    Settings::Focus {} => {
                         window.set_focus();
                         webview.focus();
                     }
-                    Settings::SetFullscreen { fullscreen } => {
+                    Settings::Fullscreen { fullscreen } => {
                         if fullscreen {
                             window.set_fullscreen(Some(borderless_fullscreen.clone()));
                         } else {
                             window.set_fullscreen(None);
                         }
                     }
-                    Settings::SetMaxInnerSize { width, height } => {
-                        window.set_max_inner_size(Some(LogicalSize::new(width, height)))
-                    }
-                    Settings::SetMaximized { maximized } => window.set_maximized(maximized),
-                    Settings::SetMinInnerSize { width, height } => {
-                        window.set_min_inner_size(Some(LogicalSize::new(width, height)))
-                    }
-                    Settings::SetMinimized { minimized } => window.set_minimized(minimized),
+                    Settings::Maximized { maximized } => window.set_maximized(maximized),
+                    Settings::Minimized { minimized } => window.set_minimized(minimized),
                 }
             }
             Event::NewEvents(StartCause::Init) => println!("Native WebView has started!"),
