@@ -3,12 +3,12 @@ use std::io::{self, BufRead};
 use std::thread;
 
 use crossbeam_channel::{bounded, Receiver};
-use serde::Serialize;
-use serde_json::Value;
+use serde::{Deserialize, Serialize};
 
+use wry::application::window::Fullscreen;
 use wry::{
     application::{
-        dpi::LogicalSize,
+        dpi::{LogicalPosition, LogicalSize},
         event::{Event, StartCause, WindowEvent},
         event_loop::{ControlFlow, EventLoop},
         window::WindowBuilder,
@@ -41,10 +41,33 @@ enum Message {
     },
 }
 
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+enum Settings {
+    Eval { js: String },
+    Close {},
+    SetTitle { title: String },
+    SetInnerSize { width: f64, height: f64 },
+    SetWindowIcon { path: String },
+    SetAlwaysOnTop { always_on_top: bool },
+    SetDecorations { decorations: bool },
+    SetOuterPosition { top: f64, left: f64 },
+    SetResizable { resizable: bool },
+    SetFocus {},
+    SetFullscreen { fullscreen: bool },
+    SetMaxInnerSize { width: f64, height: f64 },
+    SetMaximized { maximized: bool },
+    SetMinInnerSize { width: f64, height: f64 },
+    SetMinimized { minimized: bool },
+}
+
+#[derive(Deserialize)]
 struct Path {
+    url: String,
     path: String,
     mimetype: String,
 }
+
 const IO_CHANNEL_PREFIX: &str = "_ioc:";
 const INIT_SCRIPT: &str = r#"
 console.logOriginal = console.log;
@@ -68,26 +91,22 @@ fn send_ioc_message(message: Message) {
     )
 }
 
-fn get_path(url: &str, rx: Receiver<Value>) -> Path {
+fn get_path(url: &str, rx: Receiver<Path>) -> Path {
     send_ioc_message(Message::Path {
         url: url.to_string(),
     });
 
     loop {
-        let message = rx.recv().unwrap();
-        let message_url = message["url"].as_str().unwrap();
+        let path = rx.recv().unwrap();
 
-        if message_url == url {
-            return Path {
-                path: message["path"].as_str().unwrap().to_string(),
-                mimetype: message["mimetype"].as_str().unwrap().to_string(),
-            };
+        if path.url == url {
+            return path;
         }
     }
 }
 
 fn main() -> wry::Result<()> {
-    let (s_path, r_path) = bounded(0);
+    let (s_path, r_path) = bounded::<Path>(0);
 
     let event_loop = EventLoop::with_user_event();
     let window = WindowBuilder::new()
@@ -130,6 +149,11 @@ fn main() -> wry::Result<()> {
             Some(RpcResponse::new_result(req.id.take(), None))
         })
         .build()?;
+    let monitor = event_loop
+        .available_monitors()
+        .nth(0) // TODO: set active monitor
+        .expect("No available monitor");
+    let borderless_fullscreen = Fullscreen::Borderless(Some(monitor));
 
     let event_proxy = event_loop.create_proxy();
     thread::spawn(move || loop {
@@ -142,13 +166,15 @@ fn main() -> wry::Result<()> {
             .to_string();
 
         if line.starts_with(IO_CHANNEL_PREFIX) {
-            let message: Value = serde_json::from_str(&line[IO_CHANNEL_PREFIX.len()..]).unwrap();
-            let message_type = message["type"].as_str().unwrap();
+            let string = &line[IO_CHANNEL_PREFIX.len()..];
+            // let message: Value = ;
+            // let message_type = .unwrap().["type"].as_str().unwrap();
 
-            if message_type == "path" {
-                s_path.send(message).unwrap();
-            } else {
-                event_proxy.send_event(message).unwrap();
+            match serde_json::from_str::<Path>(string) {
+                Ok(path) => s_path.send(path).unwrap(),
+                Err(_) => {
+                    event_proxy.send_event(string.to_string()).unwrap();
+                }
             }
         }
     });
@@ -157,29 +183,51 @@ fn main() -> wry::Result<()> {
         *control_flow = ControlFlow::Wait;
 
         match event {
-            Event::UserEvent(message) => {
-                let message_type = message["type"].as_str().unwrap();
+            Event::UserEvent(string) => {
                 let window = webview.window();
 
-                match message_type {
-                    "setTitle" => window.set_title(&message["title"].as_str().unwrap()),
-                    "setSize" => {
-                        let size = LogicalSize::new(
-                            message["width"].as_f64().unwrap(),
-                            message["height"].as_f64().unwrap(),
-                        );
-                        window.set_inner_size(size);
+                match serde_json::from_str::<Settings>(&string).unwrap() {
+                    Settings::Eval { js } => webview.evaluate_script(&js).unwrap(),
+                    Settings::Close {} => *control_flow = ControlFlow::Exit,
+                    Settings::SetTitle { title } => window.set_title(&title),
+                    Settings::SetInnerSize { width, height } => {
+                        window.set_inner_size(LogicalSize::new(width, height))
                     }
-                    "setWindowIcon" =>
-                    {
-                        #[cfg(not(target_os = "macos"))]
-                        window.set_window_icon(Some(load_icon(&message["path"].as_str().unwrap())))
+                    #[cfg(not(target_os = "macos"))]
+                    Settings::SetWindowIcon { path } => {
+                        window.set_window_icon(Some(load_icon(&path)))
                     }
-                    "close" => *control_flow = ControlFlow::Exit,
-                    "eval" => webview
-                        .evaluate_script(&message["js"].as_str().unwrap())
-                        .unwrap(),
-                    _ => println!("Unknown message type {}", message_type),
+                    #[cfg(target_os = "macos")]
+                    Settings::SetWindowIcon { path: _ } => {
+                        println!("Window icon not allowed for macos.");
+                    }
+                    Settings::SetAlwaysOnTop { always_on_top } => {
+                        window.set_always_on_top(always_on_top)
+                    }
+                    Settings::SetDecorations { decorations } => window.set_decorations(decorations),
+                    Settings::SetOuterPosition { top, left } => {
+                        window.set_outer_position(LogicalPosition::new(left, top))
+                    }
+                    Settings::SetResizable { resizable } => window.set_resizable(resizable),
+                    Settings::SetFocus {} => {
+                        window.set_focus();
+                        webview.focus();
+                    }
+                    Settings::SetFullscreen { fullscreen } => {
+                        if fullscreen {
+                            window.set_fullscreen(Some(borderless_fullscreen.clone()));
+                        } else {
+                            window.set_fullscreen(None);
+                        }
+                    }
+                    Settings::SetMaxInnerSize { width, height } => {
+                        window.set_max_inner_size(Some(LogicalSize::new(width, height)))
+                    }
+                    Settings::SetMaximized { maximized } => window.set_maximized(maximized),
+                    Settings::SetMinInnerSize { width, height } => {
+                        window.set_min_inner_size(Some(LogicalSize::new(width, height)))
+                    }
+                    Settings::SetMinimized { minimized } => window.set_minimized(minimized),
                 }
             }
             Event::NewEvents(StartCause::Init) => println!("Native WebView has started!"),
