@@ -7,9 +7,53 @@
 
 <body>
     <h1>Hello, I am Native WebView</h1>
-    <button onclick="sendMessage('Hi UTF-8 +ěščřžýáí')">Send message</button>
+
+    <img src="nwv://icon.png" />
+
     <button onclick="console.log('Log 1', 2, { obj: 3 })">Log</button>
     <button onclick="throw new Error('Error here!')">Send Error</button>
+    <hr />
+
+    <button onclick="sendMessage({ type: 'focus' })">focus</button>
+    <button onclick="sendMessage({ type: 'close'})">close</button>
+
+    <br />
+    <button onclick="sendMessage({ type: 'title', title: 'Title one' })">Title: "Title one"</button>
+    <button onclick="sendMessage({ type: 'title', title: 'Title two' })">Title: "Title two"</button>
+
+    <br />
+    windowIcon: { path: string },
+
+    <br />
+    <button onclick="sendMessage({ type: 'resizable', resizable: true })">Resizable ON</button>
+    <button onclick="sendMessage({ type: 'resizable', resizable: false })">Resizable OFF</button>
+
+    <br />
+    <button onclick="sendMessage({ type: 'innerSize', width: 200, height: 200 })">Inner size 200x200</button>
+
+    <br />
+    minInnerSize: { width: number, height: number },
+    maxInnerSize: { width: number, height: number },
+
+    <br />
+    <button onclick="sendMessage({ type: 'outerPosition', top: 200, left: 200 })">Outer position 200x200</button>
+
+    <br />
+    <button onclick="sendMessage({ type: 'alwaysOnTop', always: true })">alwaysOnTop ON</button>
+    <button onclick="sendMessage({ type: 'alwaysOnTop', always: false })">alwaysOnTop OFF</button>
+
+    <br />
+    <button onclick="sendMessage({ type: 'decorations', decorations: true })">decorations ON</button>
+    <button onclick="sendMessage({ type: 'decorations', decorations: false })">decorations OFF</button>
+
+    <br />
+    <button onclick="sendMessage({ type: 'fullscreen', fullscreen: true })">fullscreen ON</button>
+    <button onclick="sendMessage({ type: 'fullscreen', fullscreen: false })">fullscreen OFF</button>
+
+    <br />
+    maximized: { maximized: boolean },
+    minimized: { minimized: boolean },
+
     <pre id="log"></pre>
 </body>
 
