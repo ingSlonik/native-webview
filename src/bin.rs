@@ -43,8 +43,9 @@ enum Message {
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 enum Settings {
-    Eval { js: String },
+    Focus {},
     Close {},
+    Eval { js: String },
     Title { title: String },
     WindowIcon { path: String },
     Resizable { resizable: bool },
@@ -54,7 +55,7 @@ enum Settings {
     OuterPosition { top: f64, left: f64 },
     AlwaysOnTop { always: bool },
     Decorations { decorations: bool },
-    Focus {},
+    // Transparent { transparent: bool },
     Fullscreen { fullscreen: bool },
     Maximized { maximized: bool },
     Minimized { minimized: bool },
@@ -109,10 +110,12 @@ fn main() -> wry::Result<()> {
 
     let event_loop = EventLoop::with_user_event();
     let window = WindowBuilder::new()
+        // .with_transparent(true)
         // TODO: open windows with default settings
         // .with_title("Native WebView")
         .build(&event_loop)?;
     let webview = WebViewBuilder::new(window)?
+        // .with_transparent(true)
         .with_initialization_script(INIT_SCRIPT)
         .with_custom_protocol("nwv".into(), move |request| {
             let path = get_path(request.uri(), r_path.clone());
@@ -188,6 +191,10 @@ fn main() -> wry::Result<()> {
                 match serde_json::from_str::<Settings>(&string).unwrap() {
                     Settings::Eval { js } => webview.evaluate_script(&js).unwrap(),
                     Settings::Close {} => *control_flow = ControlFlow::Exit,
+                    Settings::Focus {} => {
+                        window.set_focus();
+                        webview.focus();
+                    }
                     Settings::Title { title } => window.set_title(&title),
                     #[cfg(not(target_os = "macos"))]
                     Settings::WindowIcon { path } => window.set_window_icon(Some(load_icon(&path))),
@@ -210,10 +217,6 @@ fn main() -> wry::Result<()> {
                     }
                     Settings::AlwaysOnTop { always } => window.set_always_on_top(always),
                     Settings::Decorations { decorations } => window.set_decorations(decorations),
-                    Settings::Focus {} => {
-                        window.set_focus();
-                        webview.focus();
-                    }
                     Settings::Fullscreen { fullscreen } => {
                         if fullscreen {
                             window.set_fullscreen(Some(borderless_fullscreen.clone()));

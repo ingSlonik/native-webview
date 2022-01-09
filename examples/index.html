@@ -3,58 +3,67 @@
 
 <head>
     <meta charset="UTF-8">
+    <style>
+        h2 {
+            margin-bottom: 0px;
+        }
+    </style>
 </head>
 
 <body>
     <h1>Hello, I am Native WebView</h1>
 
+    <h2>Window icon and images from file system</h2>
     <img src="nwv://icon.png" />
 
+    <h2>Logging to node console</h2>
     <button onclick="console.log('Log 1', 2, { obj: 3 })">Log</button>
     <button onclick="throw new Error('Error here!')">Send Error</button>
-    <hr />
 
+    <h2>Actions</h2>
+    <button onclick="sendMessage({ type: 'eval', js: '1 + 2' })">eval</button>
     <button onclick="sendMessage({ type: 'focus' })">focus</button>
     <button onclick="sendMessage({ type: 'close'})">close</button>
 
-    <br />
+    <h2>Tile</h2>
     <button onclick="sendMessage({ type: 'title', title: 'Title one' })">Title: "Title one"</button>
     <button onclick="sendMessage({ type: 'title', title: 'Title two' })">Title: "Title two"</button>
 
-    <br />
-    windowIcon: { path: string },
-
-    <br />
+    <h2>Resizable windows</h2>
+    <p>macOS not supported</p>
     <button onclick="sendMessage({ type: 'resizable', resizable: true })">Resizable ON</button>
     <button onclick="sendMessage({ type: 'resizable', resizable: false })">Resizable OFF</button>
 
+    <h2>Size of WebView</h2>
+    <button onclick="sendMessage({ type: 'innerSize', width: 320, height: 320 })">Inner size 320x320</button>
+    <button onclick="sendMessage({ type: 'innerSize', width: 640, height: 420 })">Inner size 640x420</button>
     <br />
-    <button onclick="sendMessage({ type: 'innerSize', width: 200, height: 200 })">Inner size 200x200</button>
+    <button onclick="sendMessage({ type: 'minInnerSize', width: 200, height: 200 })">Min inner size 200x200</button>
+    <button onclick="sendMessage({ type: 'maxInnerSize', width: 800, height: 600 })">Max inner size 800x600</button>
 
-    <br />
-    minInnerSize: { width: number, height: number },
-    maxInnerSize: { width: number, height: number },
-
-    <br />
+    <h2>Window position</h2>
     <button onclick="sendMessage({ type: 'outerPosition', top: 200, left: 200 })">Outer position 200x200</button>
 
-    <br />
-    <button onclick="sendMessage({ type: 'alwaysOnTop', always: true })">alwaysOnTop ON</button>
-    <button onclick="sendMessage({ type: 'alwaysOnTop', always: false })">alwaysOnTop OFF</button>
+    <h2>Window always on top</h2>
+    <button onclick="sendMessage({ type: 'alwaysOnTop', always: true })">Always on top ON</button>
+    <button onclick="sendMessage({ type: 'alwaysOnTop', always: false })">Always on top OFF</button>
 
-    <br />
-    <button onclick="sendMessage({ type: 'decorations', decorations: true })">decorations ON</button>
-    <button onclick="sendMessage({ type: 'decorations', decorations: false })">decorations OFF</button>
+    <h2>Decoration (border) of window</h2>
+    <button onclick="sendMessage({ type: 'decorations', decorations: true })">Decorations ON</button>
+    <button onclick="sendMessage({ type: 'decorations', decorations: false })">Decorations OFF</button>
 
-    <br />
-    <button onclick="sendMessage({ type: 'fullscreen', fullscreen: true })">fullscreen ON</button>
-    <button onclick="sendMessage({ type: 'fullscreen', fullscreen: false })">fullscreen OFF</button>
+    <h2>Fullscreen</h2>
+    <button onclick="sendMessage({ type: 'fullscreen', fullscreen: true })">Fullscreen ON</button>
+    <button onclick="sendMessage({ type: 'fullscreen', fullscreen: false })">Fullscreen OFF</button>
 
-    <br />
-    maximized: { maximized: boolean },
-    minimized: { minimized: boolean },
+    <h2>Minimized window</h2>
+    <button onclick="sendMessage({ type: 'minimized', minimized: true })">Minimized ON</button>
+    <button onclick="sendMessage({ type: 'minimized', minimized: false })">Minimized OFF</button>
 
-    <pre id="log"></pre>
+    <h2>Maximized window</h2>
+    <button onclick="sendMessage({ type: 'maximized', maximized: true })">Maximized ON</button>
+    <button onclick="sendMessage({ type: 'maximized', maximized: false })">Maximized OFF</button>
+
 </body>
 
 </html>
