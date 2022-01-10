@@ -250,7 +250,9 @@ fn main() -> wry::Result<()> {
                 *control_flow = ControlFlow::Exit;
                 send_ioc_message(Message::End {});
             }
-            _ => (),
+            _ => {
+                let _ = webview.resize();
+            },
         }
     });
 }
