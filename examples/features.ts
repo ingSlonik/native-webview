@@ -8,11 +8,10 @@ const nwv = new NativeWebView(
         windowIcon: { path: resolve(__dirname, "icon.png") },
     },
     (nmv) => resolve(__dirname, nmv.replace("nwv://", "")),
-    (message: string) => {
+    (message: { type: keyof NativeWebViewSettings } & NativeWebViewSettings[keyof NativeWebViewSettings]) => {
         console.log("Message from WebView:", message);
-        const { type, ...setting } = JSON.parse(message);
-        if (typeof type === "string") {
-            nwv.set(type as keyof NativeWebViewSettings, setting);
+        if (typeof message.type === "string") {
+            nwv.set(message.type, message);
         }
     }
 );
