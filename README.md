@@ -2,6 +2,25 @@
 
 This packages is nodejs wrap of the [wry](https://github.com/tauri-apps/wry) library.
 
+## Features
+
+- `Focus` - focus the window and webview
+- `Close` - close the window
+- `Eval` - eval javascript in webview
+- `Title` - title of window
+- `WindowIcon` - icon of window (only Window and Linux)
+- `Resizable` - allow user to resize
+- `InnerSize` - set size
+- `MinInnerSize` - set minimum size
+- `MaxInnerSize` - set maximum size
+- `OuterPosition` - set position of window
+- `AlwaysOnTop` - window always on top
+- `Decorations` - turn on/off decorations (window border)
+- `Fullscreen` - set fullscreen
+- `Maximized` - maximize the window
+- `Minimized` - minimize the window
+- `Files` - handle files from file system as images (`nwv://` protocol)
+
 ## Usage
 
 ```js
