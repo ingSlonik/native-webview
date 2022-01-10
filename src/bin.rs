@@ -24,19 +24,23 @@ use wry::application::window::Icon;
 #[derive(Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 enum Message {
-    Log {
-        log: String,
-    },
+    Start {},
+    End {},
     Message {
         message: String,
     },
-    Error {
-        error: String,
-        url: String,
-        line: u64,
+    Log {
+        log: String,
     },
     Path {
         url: String,
+    },
+    Error {
+        message: String,
+        source: String,
+        line: u64,
+        column: u64,
+        stack: String,
     },
 }
 
@@ -72,10 +76,15 @@ const IO_CHANNEL_PREFIX: &str = "_ioc:";
 const INIT_SCRIPT: &str = r#"
 console.logOriginal = console.log;
 console.log = function () {
+    console.logOriginal.apply(this, arguments);
     rpc.call("log", Array.prototype.splice.call(arguments, 0));
 };
-window.onerror = function(error, url, line) {
-    rpc.call("error", error, url, line);
+window.onerror = function(message, source, line, column, error) {
+    let stack = "";
+    if (error instanceof Error && error.stack) {
+        stack = error.stack.toString();
+    }
+    rpc.call("error", message, source, line, column, stack);
 };
 
 function sendMessage(message) {
@@ -129,21 +138,23 @@ fn main() -> wry::Result<()> {
         .with_rpc_handler(|_window, mut req| {
             match req.method.as_ref() {
                 "message" => send_ioc_message(Message::Message {
-                    message: req.params.unwrap()[0].to_string(),
+                    message: req.params.unwrap()[0].as_str().unwrap().to_string(),
                 }),
                 "log" => send_ioc_message(Message::Log {
                     log: req.params.unwrap()[0].to_string(),
                 }),
                 "error" => send_ioc_message(Message::Error {
-                    error: req.params.as_ref().unwrap()[0]
+                    message: req.params.as_ref().unwrap()[0]
                         .as_str()
                         .unwrap()
                         .to_string(),
-                    url: req.params.as_ref().unwrap()[1]
+                    source: req.params.as_ref().unwrap()[1]
                         .as_str()
                         .unwrap()
                         .to_string(),
-                    line: req.params.unwrap()[2].as_u64().unwrap(),
+                    line: req.params.as_ref().unwrap()[2].as_u64().unwrap(),
+                    column: req.params.as_ref().unwrap()[3].as_u64().unwrap(),
+                    stack: req.params.unwrap()[4].as_str().unwrap().to_string(),
                 }),
                 _ => println!("Unknown RPC message type {}", req.method),
             }
@@ -190,7 +201,10 @@ fn main() -> wry::Result<()> {
 
                 match serde_json::from_str::<Settings>(&string).unwrap() {
                     Settings::Eval { js } => webview.evaluate_script(&js).unwrap(),
-                    Settings::Close {} => *control_flow = ControlFlow::Exit,
+                    Settings::Close {} => {
+                        *control_flow = ControlFlow::Exit;
+                        send_ioc_message(Message::End {});
+                    }
                     Settings::Focus {} => {
                         window.set_focus();
                         webview.focus();
@@ -228,11 +242,14 @@ fn main() -> wry::Result<()> {
                     Settings::Minimized { minimized } => window.set_minimized(minimized),
                 }
             }
-            Event::NewEvents(StartCause::Init) => println!("Native WebView has started!"),
+            Event::NewEvents(StartCause::Init) => send_ioc_message(Message::Start {}),
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
-            } => *control_flow = ControlFlow::Exit,
+            } => {
+                *control_flow = ControlFlow::Exit;
+                send_ioc_message(Message::End {});
+            }
             _ => (),
         }
     });
