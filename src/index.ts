@@ -39,6 +39,12 @@ export type NativeWebViewSettings = {
     minimized: { minimized: boolean },
 };
 
+type InitNativeWebViewSettings = {
+    title: string,
+    innerSize?: { width: number, height: number },
+    outerPosition?: { top: number, left: number },
+};
+
 type Path = {
     url: string,
     path: string,
@@ -61,11 +67,11 @@ export default class NativeWebView {
     private onMessage: (message: any) => void = (message) => console.log("Message:", message);
 
     constructor(
-        settings: Partial<Omit<NativeWebViewSettings, "eval" | "close" | "focus" | "title">> & { title: string },
+        settings: InitNativeWebViewSettings,
         getPath?: (nwv: string) => string,
         onMessage?: (message: any) => void,
     ) {
-        const { title, windowIcon, ...other } = settings;
+        const { title, ...other } = settings;
         this.settings = { title: { title }, ...other };
 
         if (getPath) this.getPath = getPath;
