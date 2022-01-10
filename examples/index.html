@@ -14,7 +14,8 @@
     <h1>Hello, I am Native WebView</h1>
 
     <h2>Window icon and images from file system</h2>
-    <img src="nwv://icon.png" />
+    <img id="image" src="/icon.png" />
+    <p>Window icon not supported for macOS</p>
 
     <h2>Logging to node console</h2>
     <button onclick="console.log('Log 1', 2, { obj: 3 })">Log</button>
@@ -30,7 +31,6 @@
     <button onclick="sendMessage({ type: 'title', title: 'Title two' })">Title: "Title two"</button>
 
     <h2>Resizable windows</h2>
-    <p>macOS not supported</p>
     <button onclick="sendMessage({ type: 'resizable', resizable: true })">Resizable ON</button>
     <button onclick="sendMessage({ type: 'resizable', resizable: false })">Resizable OFF</button>
 

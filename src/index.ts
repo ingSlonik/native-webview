@@ -39,15 +39,24 @@ export type NativeWebViewSettings = {
     minimized: { minimized: boolean },
 };
 
+type InitNativeWebViewSettings = {
+    title: string,
+    innerSize?: { width: number, height: number },
+    outerPosition?: { top: number, left: number },
+};
+
 type Path = {
     url: string,
     path: string,
     mimetype: string
 };
 
-type ChannelIn = { type: "message", message: string }
+type ChannelIn =
+    | { type: "start" }
+    | { type: "end" }
+    | { type: "message", message: string }
     | { type: "log", log: string /* stringify as array */ }
-    | { type: "error", error: string, url: string, line: number }
+    | { type: "error", message: string, source: string, line: number, column: string, stack: string }
     | { type: "path", url: string };
 
 export default class NativeWebView {
@@ -58,11 +67,11 @@ export default class NativeWebView {
     private onMessage: (message: any) => void = (message) => console.log("Message:", message);
 
     constructor(
-        settings: Partial<Omit<NativeWebViewSettings, "eval" | "close" | "focus" | "title">> & { title: string },
+        settings: InitNativeWebViewSettings,
         getPath?: (nwv: string) => string,
         onMessage?: (message: any) => void,
     ) {
-        const { title, windowIcon, ...other } = settings;
+        const { title, ...other } = settings;
         this.settings = { title: { title }, ...other };
 
         if (getPath) this.getPath = getPath;
@@ -92,20 +101,26 @@ export default class NativeWebView {
     private sendPath(path: Path) {
         if (this.childProcess === null) throw Error("WebView is not running.");
 
-        // console.log("sendPath", message);
         this.childProcess.stdin.write(`${IO_CHANNEL_PREFIX}${JSON.stringify({ type: "path", ...path })}\n`);
     }
 
     private sendSetting<Type extends keyof NativeWebViewSettings>(type: Type, setting: NativeWebViewSettings[Type]) {
         if (this.childProcess === null) throw Error("WebView is not running.");
 
-        // console.log("sendSetting", message);
         this.childProcess.stdin.write(`${IO_CHANNEL_PREFIX}${JSON.stringify({ type, ...setting })}\n`);
     }
 
     private receiveChannel(message: ChannelIn) {
-        // console.log("receiveChannel", message);
         switch (message.type) {
+            case "start":
+
+                return;
+            case "end":
+                if (this.childProcess) {
+                    this.childProcess.kill();
+                    this.childProcess = null;
+                }
+                return;
             case "message":
                 this.onMessage(JSON.parse(decodeURIComponent(message.message)));
                 return;
@@ -118,7 +133,7 @@ export default class NativeWebView {
                 console.log("WebView:", ...JSON.parse(decodeURIComponent(message.log)));
                 return;
             case "error":
-                console.error("WebView Error:", message.url, message.line, decodeURIComponent(message.error));
+                console.error("WebView Error:", decodeURIComponent(message.message), message.source, "line:", message.line, "column:", message.column, decodeURIComponent(message.stack));
                 return;
             default:
                 console.error("Unknown message type.", message);
@@ -128,9 +143,11 @@ export default class NativeWebView {
     async run(): Promise<void> {
         if (this.childProcess !== null) throw Error("WebView is already running.");
 
+        this.childProcess = spawn(PROGRAM_PATH, [], {});
+        this.childProcess.stdin.setDefaultEncoding("utf-8");
+
         return new Promise((resolve, reject) => {
-            this.childProcess = spawn(PROGRAM_PATH, [], {});
-            this.childProcess.stdin.setDefaultEncoding("utf-8");
+            if (this.childProcess === null) throw Error("WebView is not running.");
 
             // error
             this.childProcess.stderr.on('data', (data) => {
@@ -139,8 +156,8 @@ export default class NativeWebView {
 
             this.childProcess.on('close', (code) => {
                 this.childProcess = null;
+                // this.isRunning = false;
                 resolve();
-                // console.log(`child process exited with code ${code}`);
             });
 
             // receive message

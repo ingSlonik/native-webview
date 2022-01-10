@@ -1,18 +1,20 @@
-import { resolve } from "path";
+import { resolve, basename } from "path";
 import NativeWebView, { NativeWebViewSettings } from "../src/index";
 
 const nwv = new NativeWebView(
     {
         title: "Hello title",
         innerSize: { width: 640, height: 420 },
-        windowIcon: { path: resolve(__dirname, "icon.png") },
     },
-    (nmv) => resolve(__dirname, nmv.replace("nwv://", "")),
-    (message: string) => {
+    (nmv) => {
+        const path = resolve(__dirname, basename(nmv));
+        console.log("nmv protocol:", nmv, "->", path);
+        return path;
+    },
+    (message: { type: keyof NativeWebViewSettings } & NativeWebViewSettings[keyof NativeWebViewSettings]) => {
         console.log("Message from WebView:", message);
-        const { type, ...setting } = JSON.parse(message);
-        if (typeof type === "string") {
-            nwv.set(type as keyof NativeWebViewSettings, setting);
+        if (typeof message.type === "string") {
+            nwv.set(message.type, message);
         }
     }
 );
@@ -21,3 +23,5 @@ const nwv = new NativeWebView(
     await nwv.run();
     console.log("WebView closed");
 })();
+
+nwv.set("windowIcon", { path: resolve(__dirname, "icon.png") });
