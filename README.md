@@ -31,7 +31,6 @@ const nwv = new NativeWebView(
     {
         title: "Hello title",
         innerSize: { width: 640, height: 420 },
-        windowIcon: { path: resolve(__dirname, "icon.png") },
     },
     nmv => resolve(__dirname, nmv.replace("nwv://", "")),
     message => console.log("Message from WebView:", message)
