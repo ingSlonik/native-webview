@@ -1,4 +1,4 @@
-import { resolve, basename } from "path";
+import { resolve } from "path";
 import NativeWebView, { NativeWebViewSettings } from "../src/index";
 
 const nwv = new NativeWebView(
@@ -6,9 +6,9 @@ const nwv = new NativeWebView(
         title: "Hello title",
         innerSize: { width: 640, height: 420 },
     },
-    (nmv) => {
-        const path = resolve(__dirname, basename(nmv));
-        console.log("nmv protocol:", nmv, "->", path);
+    (file) => {
+        const path = resolve(__dirname, file);
+        console.log("File:", file, "->", path);
         return path;
     },
     (message: { type: keyof NativeWebViewSettings } & NativeWebViewSettings[keyof NativeWebViewSettings]) => {
