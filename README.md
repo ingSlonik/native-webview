@@ -32,7 +32,7 @@ const nwv = new NativeWebView(
         title: "Hello title",
         innerSize: { width: 640, height: 420 },
     },
-    nmv => resolve(__dirname, nmv.replace("nwv://", "")),
+    file => resolve(__dirname, file),
     message => console.log("Message from WebView:", message)
 );
 
