@@ -63,12 +63,12 @@ export default class NativeWebView {
     private settings: Partial<NativeWebViewSettings>;
     private childProcess: null | ChildProcessWithoutNullStreams = null;
 
-    private getPath: (nwv: string) => string = (nwv) => resolve(__dirname, "..", "dist", nwv.replace("nwv://", ""));
+    private getPath: (file: string) => string = (file) => resolve(process.cwd(), file);
     private onMessage: (message: any) => void = (message) => console.log("Message:", message);
 
     constructor(
         settings: InitNativeWebViewSettings,
-        getPath?: (nwv: string) => string,
+        getPath?: (file: string) => string,
         onMessage?: (message: any) => void,
     ) {
         const { title, ...other } = settings;
@@ -125,7 +125,13 @@ export default class NativeWebView {
                 this.onMessage(JSON.parse(decodeURIComponent(message.message)));
                 return;
             case "path":
-                const path = this.getPath(message.url);
+                let file = "";
+                if (message.url === "nwv://index.html") {
+                    file = "index.html";
+                } else {
+                    file = message.url.replace("nwv://index.html", "").replace("nwv://", "");
+                }
+                const path = this.getPath(file);
                 this.sendPath({ url: message.url, path, mimetype: this.getMimetype(path) });
                 return;
 

@@ -19,7 +19,7 @@ This packages is nodejs wrap of the [wry](https://github.com/tauri-apps/wry) lib
 - `Fullscreen` - set fullscreen
 - `Maximized` - maximize the window
 - `Minimized` - minimize the window
-- `Files` - handle files from file system as images (`nwv://` protocol)
+- `Files` - handle files from file system
 
 ## Usage
 
