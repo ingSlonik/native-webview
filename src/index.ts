@@ -129,7 +129,7 @@ export default class NativeWebView {
                 if (message.url === "nwv://index.html") {
                     file = "index.html";
                 } else {
-                    file = message.url.replace("nwv://index.html", "").replace("nwv://", "");
+                    file = message.url.replace("nwv://index.html/", "").replace("nwv://", "");
                 }
                 const path = this.getPath(file);
                 this.sendPath({ url: message.url, path, mimetype: this.getMimetype(path) });
