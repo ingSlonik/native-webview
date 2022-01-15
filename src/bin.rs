@@ -13,7 +13,7 @@ use wry::{
         window::{Fullscreen, WindowBuilder},
     },
     http::ResponseBuilder,
-    webview::{RpcResponse, WebViewBuilder},
+    webview::{FileDropEvent, RpcResponse, WebViewBuilder},
 };
 
 #[cfg(not(target_os = "macos"))]
@@ -22,26 +22,27 @@ use image;
 use wry::application::window::Icon;
 
 #[derive(Serialize)]
+struct FrontEndError {
+    message: String,
+    source: String,
+    line: u64,
+    column: u64,
+    stack: String,
+}
+
+#[derive(Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 enum Message {
     Start {},
     End {},
-    Message {
-        message: String,
-    },
-    Log {
-        log: String,
-    },
-    Path {
-        url: String,
-    },
-    Error {
-        message: String,
-        source: String,
-        line: u64,
-        column: u64,
-        stack: String,
-    },
+    Message { message: String },
+    Log { log: String },
+    Path { url: String },
+    Error(FrontEndError),
+
+    FileDropHovered { paths: Vec<String> },
+    FileDropDropped { paths: Vec<String> },
+    FileDropCancelled {},
 }
 
 #[derive(Deserialize)]
@@ -143,7 +144,7 @@ fn main() -> wry::Result<()> {
                 "log" => send_ioc_message(Message::Log {
                     log: req.params.unwrap()[0].to_string(),
                 }),
-                "error" => send_ioc_message(Message::Error {
+                "error" => send_ioc_message(Message::Error(FrontEndError {
                     message: req.params.as_ref().unwrap()[0]
                         .as_str()
                         .unwrap()
@@ -155,11 +156,29 @@ fn main() -> wry::Result<()> {
                     line: req.params.as_ref().unwrap()[2].as_u64().unwrap(),
                     column: req.params.as_ref().unwrap()[3].as_u64().unwrap(),
                     stack: req.params.unwrap()[4].as_str().unwrap().to_string(),
-                }),
+                })),
                 _ => println!("Unknown RPC message type {}", req.method),
             }
 
             Some(RpcResponse::new_result(req.id.take(), None))
+        })
+        .with_file_drop_handler(|_, data| {
+            match data {
+                FileDropEvent::Hovered(paths) => send_ioc_message(Message::FileDropHovered {
+                    paths: paths
+                        .iter()
+                        .map(|buf| buf.to_str().unwrap().to_string())
+                        .collect(),
+                }),
+                FileDropEvent::Dropped(paths) => send_ioc_message(Message::FileDropDropped {
+                    paths: paths
+                        .iter()
+                        .map(|buf| buf.to_str().unwrap().to_string())
+                        .collect(),
+                }),
+                _ => send_ioc_message(Message::FileDropCancelled {}),
+            }
+            true // Returning true will block the OS default behaviour.
         })
         .build()?;
     let monitor = event_loop
@@ -252,7 +271,7 @@ fn main() -> wry::Result<()> {
             }
             _ => {
                 let _ = webview.resize();
-            },
+            }
         }
     });
 }
