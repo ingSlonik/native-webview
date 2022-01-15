@@ -43,6 +43,9 @@ type InitNativeWebViewSettings = {
     title: string,
     innerSize?: { width: number, height: number },
     outerPosition?: { top: number, left: number },
+    getPath?: (src: string) => string,
+    onDrop?: (drop: Drop) => void,
+    onMessage?: (message: any) => void,
 };
 
 type Path = {
@@ -51,13 +54,19 @@ type Path = {
     mimetype: string
 };
 
-type ChannelIn =
+type Drop =
+    | { type: "fileDropHovered", paths: string[] }
+    | { type: "fileDropDropped", paths: string[] }
+    | { type: "fileDropCancelled" };
+
+type Message =
     | { type: "start" }
     | { type: "end" }
     | { type: "message", message: string }
     | { type: "log", log: string /* stringify as array */ }
     | { type: "error", message: string, source: string, line: number, column: string, stack: string }
-    | { type: "path", url: string };
+    | { type: "path", url: string }
+    | Drop;
 
 export default class NativeWebView {
     private settings: Partial<NativeWebViewSettings>;
@@ -65,16 +74,14 @@ export default class NativeWebView {
 
     private getPath: (file: string) => string = (file) => resolve(process.cwd(), file);
     private onMessage: (message: any) => void = (message) => console.log("Message:", message);
+    private onDrop: (drop: Drop) => void = (drop) => { };
 
-    constructor(
-        settings: InitNativeWebViewSettings,
-        getPath?: (file: string) => string,
-        onMessage?: (message: any) => void,
-    ) {
-        const { title, ...other } = settings;
+    constructor(settings: InitNativeWebViewSettings) {
+        const { title, getPath, onDrop, onMessage, ...other } = settings;
         this.settings = { title: { title }, ...other };
 
         if (getPath) this.getPath = getPath;
+        if (onDrop) this.onDrop = onDrop;
         if (onMessage) this.onMessage = onMessage;
     }
 
@@ -110,7 +117,8 @@ export default class NativeWebView {
         this.childProcess.stdin.write(`${IO_CHANNEL_PREFIX}${JSON.stringify({ type, ...setting })}\n`);
     }
 
-    private receiveChannel(message: ChannelIn) {
+    private receiveChannel(message: Message) {
+        console.log(message)
         switch (message.type) {
             case "start":
 
@@ -141,6 +149,17 @@ export default class NativeWebView {
             case "error":
                 console.error("WebView Error:", decodeURIComponent(message.message), message.source, "line:", message.line, "column:", message.column, decodeURIComponent(message.stack));
                 return;
+
+            case "fileDropHovered":
+                this.onDrop(message);
+                return;
+            case "fileDropDropped":
+                this.onDrop(message);
+                return;
+            case "fileDropCancelled":
+                this.onDrop(message);
+                return;
+
             default:
                 console.error("Unknown message type.", message);
         }
