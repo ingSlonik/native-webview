@@ -126,7 +126,7 @@ export default class NativeWebView {
                 return;
             case "path":
                 let file = "";
-                if (message.url === "nwv://index.html") {
+                if (message.url === "nwv://index.html" || message.url === "nwv://index.html/") {
                     file = "index.html";
                 } else {
                     file = message.url.replace("nwv://index.html/", "").replace("nwv://", "");
