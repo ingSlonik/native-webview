@@ -42,3 +42,35 @@ await nwv.run();
 ## Examples
 
     $ npm run example -- examples/features.ts
+
+## System specific
+
+### Windows
+
+Just double click 😉.
+
+### MacOS
+
+Dynamic change window icon is not supported. You can easily use icon with creation *.app file.
+
+### Linux
+
+Native WebView uses WebKitGTK for WebView. So please make sure following packages are installed:
+
+#### Arch Linux / Manjaro:
+
+```bash
+sudo pacman -S webkit2gtk libappindicator-gtk3
+```
+
+#### Debian / Ubuntu:
+
+```bash
+sudo apt install libwebkit2gtk-4.0-dev libappindicator3-dev
+```
+
+#### Fedora
+
+```bash
+sudo dnf install gtk3-devel webkit2gtk3-devel libappindicator-gtk3-devel
+```
