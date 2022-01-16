@@ -118,7 +118,6 @@ export default class NativeWebView {
     }
 
     private receiveChannel(message: Message) {
-        console.log(message)
         switch (message.type) {
             case "start":
 
