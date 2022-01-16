@@ -1,6 +1,6 @@
 {
   "name": "native-webview",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Native WebView for all platforms.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
