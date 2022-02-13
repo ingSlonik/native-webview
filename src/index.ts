@@ -41,6 +41,7 @@ export type NativeWebViewSettings = {
 
 type InitNativeWebViewSettings = {
     title: string,
+    transparent?: boolean,
     innerSize?: { width: number, height: number },
     outerPosition?: { top: number, left: number },
     getPath?: (src: string) => string,
@@ -69,6 +70,7 @@ type Message =
     | Drop;
 
 export default class NativeWebView {
+    private transparent: boolean = false;
     private settings: Partial<NativeWebViewSettings>;
     private childProcess: null | ChildProcessWithoutNullStreams = null;
 
@@ -77,7 +79,8 @@ export default class NativeWebView {
     private onDrop: (drop: Drop) => void = (drop) => { };
 
     constructor(settings: InitNativeWebViewSettings) {
-        const { title, getPath, onDrop, onMessage, ...other } = settings;
+        const { title, transparent, getPath, onDrop, onMessage, ...other } = settings;
+        this.transparent = transparent || false;
         this.settings = { title: { title }, ...other };
 
         if (getPath) this.getPath = getPath;
@@ -167,7 +170,10 @@ export default class NativeWebView {
     async run(): Promise<void> {
         if (this.childProcess !== null) throw Error("WebView is already running.");
 
-        this.childProcess = spawn(PROGRAM_PATH, [], {});
+        const args = ["--title", JSON.stringify(this.settings.title)];
+        if (this.transparent) args.push("--transparent");
+
+        this.childProcess = spawn(PROGRAM_PATH, args, {});
         this.childProcess.stdin.setDefaultEncoding("utf-8");
 
         return new Promise((resolve, reject) => {
