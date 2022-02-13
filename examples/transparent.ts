@@ -23,5 +23,3 @@ const nwv = new NativeWebView(
     await nwv.run();
     console.log("WebView closed");
 })();
-
-console.log(resolve(__dirname, "transparent.html"))

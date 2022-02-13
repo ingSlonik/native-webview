@@ -8,6 +8,7 @@ This packages is nodejs wrap of the [wry](https://github.com/tauri-apps/wry) lib
 - `Close` - close the window
 - `Eval` - eval javascript in webview
 - `Title` - title of window
+- `Transparent` - window with transparent background
 - `WindowIcon` - icon of window (only Window and Linux)
 - `Resizable` - allow user to resize
 - `InnerSize` - set size
@@ -41,7 +42,10 @@ await nwv.run();
 
 ## Examples
 
-    $ npm run example -- examples/features.ts
+```bash
+$ npm run example -- examples/features.ts
+$ npm run example -- examples/transparent.ts
+```
 
 ## System specific
 
