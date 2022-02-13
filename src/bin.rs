@@ -2,6 +2,8 @@ use std::fs::{canonicalize, read};
 use std::io::{self, BufRead};
 use std::thread;
 
+use clap::Parser;
+
 use crossbeam_channel::{bounded, Receiver};
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +22,14 @@ use wry::{
 use image;
 #[cfg(not(target_os = "macos"))]
 use wry::application::window::Icon;
+
+#[derive(Parser, Debug)]
+struct Args {
+    #[clap(long, short, default_value = "Native WebView")]
+    title: String,
+    #[clap(long)]
+    transparent: bool,
+}
 
 #[derive(Serialize)]
 struct FrontEndError {
@@ -116,16 +126,18 @@ fn get_path(url: &str, rx: Receiver<Path>) -> Path {
 }
 
 fn main() -> wry::Result<()> {
+    let args = Args::parse();
+
     let (s_path, r_path) = bounded::<Path>(0);
 
     let event_loop = EventLoop::with_user_event();
     let window = WindowBuilder::new()
-        // .with_transparent(true)
-        // TODO: open windows with default settings
-        // .with_title("Native WebView")
+        .with_transparent(args.transparent)
+        .with_decorations(!args.transparent)
+        .with_title(args.title)
         .build(&event_loop)?;
     let webview = WebViewBuilder::new(window)?
-        // .with_transparent(true)
+        .with_transparent(args.transparent)
         .with_initialization_script(INIT_SCRIPT)
         .with_custom_protocol("nwv".into(), move |request| {
             let path = get_path(request.uri(), r_path.clone());
@@ -181,6 +193,7 @@ fn main() -> wry::Result<()> {
             true // Returning true will block the OS default behaviour.
         })
         .build()?;
+
     let monitor = event_loop
         .available_monitors()
         .nth(0) // TODO: set active monitor
