@@ -8,7 +8,9 @@ const SYSTEM = platform === "darwin" ? "darwin" :
     platform === "win32" ? "windows" :
         "linux";
 
-const PROGRAM_PATH = resolve(__dirname, "..", "dist", `${SYSTEM}_x86_64`, `native-webview${SYSTEM === "windows" ? ".exe" : ""}`);
+const ARCH = SYSTEM === "darwin" && process.arch.includes("arm") ? "arm" : "x86"
+
+const PROGRAM_PATH = resolve(__dirname, "..", "dist", `${SYSTEM}_${ARCH}_64`, `native-webview${SYSTEM === "windows" ? ".exe" : ""}`);
 
 export type NativeWebViewSettings = {
     focus: {},

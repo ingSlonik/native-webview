@@ -15,7 +15,7 @@ use wry::{
         window::{Fullscreen, WindowBuilder},
     },
     http::ResponseBuilder,
-    webview::{FileDropEvent, RpcResponse, WebViewBuilder},
+    webview::{FileDropEvent, WebViewBuilder},
 };
 
 #[cfg(not(target_os = "macos"))]
@@ -31,7 +31,7 @@ struct Args {
     transparent: bool,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct FrontEndError {
     message: String,
     source: String,
@@ -39,6 +39,15 @@ struct FrontEndError {
     column: u64,
     stack: String,
 }
+
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+enum FrontEndMessage {
+    Log { log: String },
+    Message { message: String },
+    Error(FrontEndError),
+}
+
 
 #[derive(Serialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
@@ -88,18 +97,18 @@ const INIT_SCRIPT: &str = r#"
 console.logOriginal = console.log;
 console.log = function () {
     console.logOriginal.apply(this, arguments);
-    rpc.call("log", Array.prototype.splice.call(arguments, 0));
+    ipc.postMessage(JSON.stringify({ type: "log", log: JSON.stringify(Array.prototype.splice.call(arguments, 0)) }));
 };
 window.onerror = function(message, source, line, column, error) {
     let stack = "";
     if (error instanceof Error && error.stack) {
         stack = error.stack.toString();
     }
-    rpc.call("error", message, source, line, column, stack);
+    ipc.postMessage(JSON.stringify({ type: "error", message, source, line, column, stack }));
 };
 
 function sendMessage(message) {
-    rpc.call("message", JSON.stringify(message));
+    ipc.postMessage(JSON.stringify({ type: "message", message: JSON.stringify(message) }));
 }
 "#;
 
@@ -148,31 +157,20 @@ fn main() -> wry::Result<()> {
                 .body(content)
         })
         .with_url("nwv://index.html")?
-        .with_rpc_handler(|_window, mut req| {
-            match req.method.as_ref() {
-                "message" => send_ioc_message(Message::Message {
-                    message: req.params.unwrap()[0].as_str().unwrap().to_string(),
-                }),
-                "log" => send_ioc_message(Message::Log {
-                    log: req.params.unwrap()[0].to_string(),
-                }),
-                "error" => send_ioc_message(Message::Error(FrontEndError {
-                    message: req.params.as_ref().unwrap()[0]
-                        .as_str()
-                        .unwrap()
-                        .to_string(),
-                    source: req.params.as_ref().unwrap()[1]
-                        .as_str()
-                        .unwrap()
-                        .to_string(),
-                    line: req.params.as_ref().unwrap()[2].as_u64().unwrap(),
-                    column: req.params.as_ref().unwrap()[3].as_u64().unwrap(),
-                    stack: req.params.unwrap()[4].as_str().unwrap().to_string(),
-                })),
-                _ => println!("Unknown RPC message type {}", req.method),
+        .with_ipc_handler(|_window, front_end_message| {
+            match serde_json::from_str::<FrontEndMessage>(&front_end_message) {
+                Ok(message) => {
+                    match message {
+                        FrontEndMessage::Message { message } => send_ioc_message(Message::Message { message }),
+                        FrontEndMessage::Log { log } => send_ioc_message(Message::Log { log }),
+                        FrontEndMessage::Error(error) => send_ioc_message(Message::Error(error))
+                    }
+                },
+                Err(_) => {
+                    println!("Unknown IPC message type {}", front_end_message)
+                }
             }
 
-            Some(RpcResponse::new_result(req.id.take(), None))
         })
         .with_file_drop_handler(|_, data| {
             match data {
