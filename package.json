@@ -8,8 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "example": "ts-node",
     "build": "tsc",
-    "build:linux": "cargo build --release --target=x86_64-unknown-linux-gnu && rm -f ./dist/linux_x86_64/native-webview && mv ./target/x86_64-unknown-linux-gnu/release/native-webview ./dist/linux_x86_64 && strip ./dist/linux_x86_64/native-webview",
-    "build:linux:arm": "cargo build --release --target=aarch64-unknown-linux-gnu && rm -f ./dist/linux_arm_64/native-webview && mv ./target/aarch64-unknown-linux-gnu/release/native-webview ./dist/linux_arm_64 && strip ./dist/linux_arm_64/native-webview",
+    "build:linux": "PKG_CONFIG_ALLOW_CROSS=1 cargo build --release --target=x86_64-unknown-linux-gnu && rm -f ./dist/linux_x86_64/native-webview && mv ./target/x86_64-unknown-linux-gnu/release/native-webview ./dist/linux_x86_64 && strip ./dist/linux_x86_64/native-webview",
+    "build:linux:arm": "PKG_CONFIG_ALLOW_CROSS=1 cargo build --release --target=aarch64-unknown-linux-gnu && rm -f ./dist/linux_arm_64/native-webview && mv ./target/aarch64-unknown-linux-gnu/release/native-webview ./dist/linux_arm_64 && strip ./dist/linux_arm_64/native-webview",
     "build:win": "cargo build --release --target=x86_64-pc-windows-msvc && move /Y .\\target\\x86_64-pc-windows-msvc\\release\\native-webview.exe .\\dist\\windows_x86_64",
     "build:mac": "cargo build --release --target=x86_64-apple-darwin && rm -f ./dist/darwin_x86_64/native-webview && mv ./target/x86_64-apple-darwin/release/native-webview ./dist/darwin_x86_64 && strip ./dist/darwin_x86_64/native-webview",
     "build:mac:arm": "cargo build --release --target=aarch64-apple-darwin && rm -f ./dist/darwin_arm_64/native-webview && mv ./target/aarch64-apple-darwin/release/native-webview ./dist/darwin_arm_64 && strip ./dist/darwin_arm_64/native-webview"

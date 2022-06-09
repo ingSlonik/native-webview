@@ -8,7 +8,7 @@ const SYSTEM = platform === "darwin" ? "darwin" :
     platform === "win32" ? "windows" :
         "linux";
 
-const ARCH = SYSTEM === "darwin" && process.arch.includes("arm") ? "arm" : "x86"
+const ARCH = ["darwin", "linux"].includes(SYSTEM) && process.arch.includes("arm") ? "arm" : "x86";
 
 const PROGRAM_PATH = resolve(__dirname, "..", "dist", `${SYSTEM}_${ARCH}_64`, `native-webview${SYSTEM === "windows" ? ".exe" : ""}`);
 
