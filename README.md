@@ -2,6 +2,12 @@
 
 This packages is nodejs wrap of the [wry](https://github.com/tauri-apps/wry) library.
 
+## Compiled for
+
+- Windows `x86_64` (works with arm)
+- MacOS `x86_64` and `arm_64` (m1)
+- Linux `x86_64` and `arm_64`
+
 ## Features
 
 - `Focus` - focus the window and webview
