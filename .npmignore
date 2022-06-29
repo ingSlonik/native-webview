@@ -2,6 +2,7 @@
 /node_modules
 /examples
 /src
+.DS_Store
 Cargo.toml
 Cargo.lock
 tsconfig.json
