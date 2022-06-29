@@ -1,6 +1,6 @@
 # native-webview
 
-![Easy DB logo](logo.svg "native-webview logo")
+![native-webview logo](logo.svg "native-webview logo")
 
 Library for creating native app for all platforms with JavaScript, HTML and CSS environment.
 This package is nodejs wrap of the [wry](https://github.com/tauri-apps/wry) library.
@@ -10,6 +10,8 @@ This package is nodejs wrap of the [wry](https://github.com/tauri-apps/wry) libr
 - Windows `x86_64` (works with arm)
 - MacOS `x86_64` and `arm_64` (m1)
 - Linux `x86_64` and `arm_64`
+
+![native-webview all os screenshot](examples/all-os.jpg "native-webview all os screenshot")
 
 ## Features
 
