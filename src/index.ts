@@ -169,6 +169,31 @@ export default class NativeWebView {
         }
     }
 
+    private parseIOMessage(out: string) {
+
+        if (out.startsWith(IO_CHANNEL_PREFIX)) {
+            let message = null;
+            try {
+                message = JSON.parse(out.substring(IO_CHANNEL_PREFIX.length));
+            } catch (e) {
+                // mac drop the \n between two messages is on end of data stream
+                const index = out.indexOf(IO_CHANNEL_PREFIX, IO_CHANNEL_PREFIX.length);
+                if (index > 0) {
+                    this.parseIOMessage(out.substring(0, index));
+                    this.parseIOMessage(out.substring(index));
+                } else {
+                    console.error("Message parse error. ", e);
+                }
+            }
+
+            this.receiveChannel(message);
+            if (message) {
+            }
+        } else {
+            console.log("WebView:", out);
+        }
+    }
+
     async run(): Promise<void> {
         if (this.childProcess !== null) throw Error("WebView is already running.");
 
@@ -194,27 +219,12 @@ export default class NativeWebView {
 
             // receive message
             let out = "";
-            this.childProcess.stdout.on('data', (data: string) => {
-
+            this.childProcess.stdout.on("data", (data: string) => {
                 data.toString().split("\n").forEach((row, i) => {
                     if (i == 0) {
                         out += row.trim();
                     } else {
-                        if (out.startsWith(IO_CHANNEL_PREFIX)) {
-                            let message = null;
-                            try {
-                                message = JSON.parse(out.substring(IO_CHANNEL_PREFIX.length));
-                            } catch (e) {
-                                console.error("Message parse error. ", e);
-                            }
-
-                            if (message) {
-                                this.receiveChannel(message);
-                            }
-                        } else {
-                            console.log("FE:", data.toString());
-                        }
-
+                        this.parseIOMessage(out);
                         out = row.trim();
                     }
                 });
