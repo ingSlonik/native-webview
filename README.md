@@ -34,14 +34,12 @@ This packages is nodejs wrap of the [wry](https://github.com/tauri-apps/wry) lib
 import { resolve } from "path";
 import NativeWebView from "native-webview";
 
-const nwv = new NativeWebView(
-    {
-        title: "Hello title",
-        innerSize: { width: 640, height: 420 },
-    },
-    file => resolve(__dirname, file),
-    message => console.log("Message from WebView:", message)
-);
+const nwv = new NativeWebView({
+    title: "Hello title",
+    innerSize: { width: 640, height: 420 },
+    getPath: src => resolve(__dirname, src),
+    onMessage: message => console.log("Message from WebView:", message)
+});
 
 await nwv.run();
 ```
