@@ -1,6 +1,9 @@
 # native-webview
 
-This packages is nodejs wrap of the [wry](https://github.com/tauri-apps/wry) library.
+![Easy DB logo](logo.svg "native-webview logo")
+
+Library for creating native app for all platforms with JavaScript, HTML and CSS environment.
+This package is nodejs wrap of the [wry](https://github.com/tauri-apps/wry) library.
 
 ## Compiled for
 
