@@ -1,8 +1,8 @@
 import { resolve } from "path";
-import NativeWebView, { NativeWebViewSettings } from "../src/index";
+import OpenWebView, { NativeWebViewSettings } from "../src/index";
 
-const nwv = new NativeWebView(
-    {
+async function runExample() {
+    const wv = await OpenWebView({
         title: "Hello title",
         innerSize: { width: 640, height: 420 },
         getPath: (src) => {
@@ -16,15 +16,15 @@ const nwv = new NativeWebView(
         onMessage: (message: { type: keyof NativeWebViewSettings } & NativeWebViewSettings[keyof NativeWebViewSettings]) => {
             console.log("Message from WebView:", message);
             if (typeof message.type === "string") {
-                nwv.set(message.type, message);
+                wv.set(message.type, message);
             }
         }
-    }
-);
+    });
 
-(async () => {
-    await nwv.run();
+    wv.set("windowIcon", { path: resolve(__dirname, "icon.png") });
+
+    await wv.onClose();
     console.log("WebView closed");
-})();
+}
 
-nwv.set("windowIcon", { path: resolve(__dirname, "icon.png") });
+runExample();
