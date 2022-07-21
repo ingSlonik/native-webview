@@ -1,2 +1,2 @@
-index.d.ts
-index.js
+*
+!index.html
