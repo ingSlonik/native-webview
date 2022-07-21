@@ -1,16 +1,9 @@
-import { platform } from 'process';
 import { resolve, extname } from "path";
 import { spawn, ChildProcessWithoutNullStreams } from "child_process";
 
+import { downloadBinaryFile, getBinaryPath, isBinaryFile } from "./binary";
+
 const IO_CHANNEL_PREFIX = "_ioc:";
-
-const SYSTEM = platform === "darwin" ? "darwin" :
-    platform === "win32" ? "windows" :
-        "linux";
-
-const ARCH = ["darwin", "linux"].includes(SYSTEM) && process.arch.includes("arm") ? "arm" : "x86";
-
-const PROGRAM_PATH = resolve(__dirname, "..", "dist", `${SYSTEM}_${ARCH}_64`, `native-webview${SYSTEM === "windows" ? ".exe" : ""}`);
 
 export type NativeWebViewSettings = {
     focus: {},
@@ -71,16 +64,17 @@ type Message =
     | { type: "path", url: string }
     | Drop;
 
-export default class NativeWebView {
+class NativeWebView {
     private transparent: boolean = false;
     private settings: Partial<NativeWebViewSettings>;
     private childProcess: null | ChildProcessWithoutNullStreams = null;
+    private closeListeners: Array<(status: null | Error) => void> = [];
 
     private getPath: (file: string) => string = (file) => resolve(process.cwd(), file);
     private onMessage: (message: any) => void = (message) => console.log("Message:", message);
     private onDrop: (drop: Drop) => void = (drop) => { };
 
-    constructor(settings: InitNativeWebViewSettings) {
+    constructor(settings: InitNativeWebViewSettings, childProcess: ChildProcessWithoutNullStreams) {
         const { title, transparent, getPath, onDrop, onMessage, ...other } = settings;
         this.transparent = transparent || false;
         this.settings = { title: { title }, ...other };
@@ -88,6 +82,8 @@ export default class NativeWebView {
         if (getPath) this.getPath = getPath;
         if (onDrop) this.onDrop = onDrop;
         if (onMessage) this.onMessage = onMessage;
+
+        this.initChildProcess(childProcess);
     }
 
     // web common MIME types
@@ -111,13 +107,13 @@ export default class NativeWebView {
     }
 
     private sendPath(path: Path) {
-        if (this.childProcess === null) throw Error("WebView is not running.");
+        if (this.childProcess === null) throw Error("WebView is closed.");
 
         this.childProcess.stdin.write(`${IO_CHANNEL_PREFIX}${JSON.stringify({ type: "path", ...path })}\n`);
     }
 
     private sendSetting<Type extends keyof NativeWebViewSettings>(type: Type, setting: NativeWebViewSettings[Type]) {
-        if (this.childProcess === null) throw Error("WebView is not running.");
+        if (this.childProcess === null) throw Error("WebView is closed.");
 
         this.childProcess.stdin.write(`${IO_CHANNEL_PREFIX}${JSON.stringify({ type, ...setting })}\n`);
     }
@@ -125,13 +121,9 @@ export default class NativeWebView {
     private receiveChannel(message: Message) {
         switch (message.type) {
             case "start":
-
                 return;
             case "end":
-                if (this.childProcess) {
-                    this.childProcess.kill();
-                    this.childProcess = null;
-                }
+                this.closing(null);
                 return;
             case "message":
                 this.onMessage(JSON.parse(decodeURIComponent(message.message)));
@@ -170,7 +162,6 @@ export default class NativeWebView {
     }
 
     private parseIOMessage(out: string) {
-
         if (out.startsWith(IO_CHANNEL_PREFIX)) {
             let message = null;
             try {
@@ -194,49 +185,48 @@ export default class NativeWebView {
         }
     }
 
-    async run(): Promise<void> {
+    private initChildProcess(childProcess: ChildProcessWithoutNullStreams) {
         if (this.childProcess !== null) throw Error("WebView is already running.");
 
-        const args = ["--title", JSON.stringify(this.settings.title)];
-        if (this.transparent) args.push("--transparent");
+        this.childProcess = childProcess;
 
-        this.childProcess = spawn(PROGRAM_PATH, args, {});
-        this.childProcess.stdin.setDefaultEncoding("utf-8");
-
-        return new Promise((resolve, reject) => {
-            if (this.childProcess === null) throw Error("WebView is not running.");
-
-            // error
-            this.childProcess.stderr.on('data', (data) => {
-                reject(new Error(`WebView error: ${data}`));
-            });
-
-            this.childProcess.on('close', (code) => {
-                this.childProcess = null;
-                // this.isRunning = false;
-                resolve();
-            });
-
-            // receive message
-            let out = "";
-            this.childProcess.stdout.on("data", (data: string) => {
-                data.toString().split("\n").forEach((row, i) => {
-                    if (i == 0) {
-                        out += row.trim();
-                    } else {
-                        this.parseIOMessage(out);
-                        out = row.trim();
-                    }
-                });
-            });
-
-            // TODO: update setting with first run
-            for (const [type, value] of Object.entries(this.settings)) {
-                if (value !== null) {
-                    this.set(type as keyof NativeWebViewSettings, value);
-                }
-            }
+        // error
+        this.childProcess.stderr.on("data", (data) => {
+            this.closing(new Error(`WebView error: ${data}`));
         });
+
+        this.childProcess.on("close", (code) => {
+            this.closing(null);
+        });
+
+        // receive message
+        let out = "";
+        this.childProcess.stdout.on("data", (data: string) => {
+            data.toString().split("\n").forEach((row, i) => {
+                if (i == 0) {
+                    out += row.trim();
+                } else {
+                    this.parseIOMessage(out);
+                    out = row.trim();
+                }
+            });
+        });
+
+        // TODO: update setting with first run
+        for (const [type, value] of Object.entries(this.settings)) {
+            if (value !== null) {
+                this.set(type as keyof NativeWebViewSettings, value);
+            }
+        }
+    }
+
+    private closing(status: null | Error) {
+        this.closeListeners.forEach(l => l(status));
+        this.closeListeners = [];
+        if (this.childProcess !== null) {
+            this.childProcess.kill();
+            this.childProcess = null;
+        }
     }
 
     set<Type extends keyof NativeWebViewSettings>(type: Type, setting: NativeWebViewSettings[Type]) {
@@ -249,10 +239,6 @@ export default class NativeWebView {
         this.set("eval", { js });
     }
 
-    focus() {
-        this.set("focus", {});
-    }
-
     close() {
         this.set("close", {});
     }
@@ -260,4 +246,28 @@ export default class NativeWebView {
     setTitle(title: string) {
         this.set("title", { title });
     }
+
+    onClose(): Promise<null | Error> {
+        if (this.childProcess === null) {
+            return Promise.resolve(null);
+        } else {
+            return new Promise(resolve => this.closeListeners.push(resolve));
+        }
+    }
+}
+
+export default async function openWebView(settings: InitNativeWebViewSettings): Promise<NativeWebView> {
+    const { title, transparent } = settings;
+
+    const args = ["--title", JSON.stringify(title)];
+    if (transparent === true) args.push("--transparent");
+
+    if (!isBinaryFile()) await downloadBinaryFile();
+
+    const childProcess = spawn(getBinaryPath(), args, {});
+    childProcess.stdin.setDefaultEncoding("utf-8");
+
+    const wv = new NativeWebView(settings, childProcess);
+
+    return wv;
 }
