@@ -280,9 +280,7 @@ fn main() -> wry::Result<()> {
                 *control_flow = ControlFlow::Exit;
                 send_ioc_message(Message::End {});
             }
-            _ => {
-                let _ = webview.resize();
-            }
+            _ => { }
         }
     });
 }
