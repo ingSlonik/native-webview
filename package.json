@@ -1,18 +1,19 @@
 {
   "name": "native-webview",
-  "version": "0.4.2",
+  "version": "0.5.0",
   "description": "Native WebView for all platforms.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "postinstall": "node ./dist/binary.js --download-binary",
     "test": "echo \"Error: no test specified\" && exit 1",
     "example": "ts-node",
     "build": "tsc",
-    "build:linux": "cargo build --release --target=x86_64-unknown-linux-gnu && rm -f ./dist/linux_x86_64/native-webview && mv ./target/x86_64-unknown-linux-gnu/release/native-webview ./dist/linux_x86_64 && strip ./dist/linux_x86_64/native-webview",
-    "build:linux:arm": "cargo build --release --target=aarch64-unknown-linux-gnu && rm -f ./dist/linux_arm_64/native-webview && mv ./target/aarch64-unknown-linux-gnu/release/native-webview ./dist/linux_arm_64 && strip ./dist/linux_arm_64/native-webview",
-    "build:win": "cargo build --release --target=x86_64-pc-windows-msvc && move /Y .\\target\\x86_64-pc-windows-msvc\\release\\native-webview.exe .\\dist\\windows_x86_64",
-    "build:mac": "cargo build --release --target=x86_64-apple-darwin && rm -f ./dist/darwin_x86_64/native-webview && mv ./target/x86_64-apple-darwin/release/native-webview ./dist/darwin_x86_64 && strip ./dist/darwin_x86_64/native-webview",
-    "build:mac:arm": "cargo build --release --target=aarch64-apple-darwin && rm -f ./dist/darwin_arm_64/native-webview && mv ./target/aarch64-apple-darwin/release/native-webview ./dist/darwin_arm_64 && strip ./dist/darwin_arm_64/native-webview"
+    "build:linux": "cargo build --release --target=x86_64-unknown-linux-gnu && rm -f ./dist/linux-x86-64-webview && mv ./target/x86_64-unknown-linux-gnu/release/native-webview ./dist/linux-x86-64-webview && strip ./dist/linux-x86-64-webview",
+    "build:linux:arm": "cargo build --release --target=aarch64-unknown-linux-gnu && rm -f ./dist/linux-arm-64-webview && mv ./target/aarch64-unknown-linux-gnu/release/native-webview ./dist/linux-arm-64-webview && strip ./dist/linux-arm-64-webview",
+    "build:win": "cargo build --release --target=x86_64-pc-windows-msvc && move /Y .\\target\\x86_64-pc-windows-msvc\\release\\native-webview.exe .\\dist\\windows-x86-64-webview",
+    "build:mac": "cargo build --release --target=x86_64-apple-darwin && rm -f ./dist/darwin-x86-64-webview && mv ./target/x86_64-apple-darwin/release/native-webview ./dist/darwin-x86-64-webview && strip ./dist/darwin-x86-64-webview",
+    "build:mac:arm": "cargo build --release --target=aarch64-apple-darwin && rm -f ./dist/darwin-arm-64-webview && mv ./target/aarch64-apple-darwin/release/native-webview ./dist/darwin-arm-64-webview && strip ./dist/darwin-arm-64-webview"
   },
   "devDependencies": {
     "@types/node": "^17.0.5",
