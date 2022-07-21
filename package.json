@@ -9,11 +9,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "example": "ts-node",
     "build": "tsc",
-    "build:linux": "cargo build --release --target=x86_64-unknown-linux-gnu && rm -f ./dist/linux-x86-64-webview && mv ./target/x86_64-unknown-linux-gnu/release/native-webview ./dist/linux-x86-64-webview && strip ./dist/linux-x86-64-webview",
-    "build:linux:arm": "cargo build --release --target=aarch64-unknown-linux-gnu && rm -f ./dist/linux-arm-64-webview && mv ./target/aarch64-unknown-linux-gnu/release/native-webview ./dist/linux-arm-64-webview && strip ./dist/linux-arm-64-webview",
-    "build:win": "cargo build --release --target=x86_64-pc-windows-msvc && move /Y .\\target\\x86_64-pc-windows-msvc\\release\\native-webview.exe .\\dist\\windows-x86-64-webview",
+    "build:win": "cargo build --release --target=x86_64-pc-windows-msvc && move /Y .\\target\\x86_64-pc-windows-msvc\\release\\native-webview.exe .\\dist\\windows-x86-64-webview.exe",
     "build:mac": "cargo build --release --target=x86_64-apple-darwin && rm -f ./dist/darwin-x86-64-webview && mv ./target/x86_64-apple-darwin/release/native-webview ./dist/darwin-x86-64-webview && strip ./dist/darwin-x86-64-webview",
-    "build:mac:arm": "cargo build --release --target=aarch64-apple-darwin && rm -f ./dist/darwin-arm-64-webview && mv ./target/aarch64-apple-darwin/release/native-webview ./dist/darwin-arm-64-webview && strip ./dist/darwin-arm-64-webview"
+    "build:mac:arm": "cargo build --release --target=aarch64-apple-darwin && rm -f ./dist/darwin-arm-64-webview && mv ./target/aarch64-apple-darwin/release/native-webview ./dist/darwin-arm-64-webview && strip ./dist/darwin-arm-64-webview",
+    "build:linux": "cargo build --release --target=x86_64-unknown-linux-gnu && rm -f ./dist/linux-x86-64-webview && mv ./target/x86_64-unknown-linux-gnu/release/native-webview ./dist/linux-x86-64-webview && strip ./dist/linux-x86-64-webview",
+    "build:linux:arm": "cargo build --release --target=aarch64-unknown-linux-gnu && rm -f ./dist/linux-arm-64-webview && mv ./target/aarch64-unknown-linux-gnu/release/native-webview ./dist/linux-arm-64-webview && strip ./dist/linux-arm-64-webview"
   },
   "devDependencies": {
     "@types/node": "^17.0.5",
